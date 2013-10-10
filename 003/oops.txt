@@ -1,0 +1,122 @@
+[ 1934.739047] PROBE STARTED
+[ 1946.141311] START PCM_OPEN
+[ 1946.141314] END HW_PARAMSDONE HW_PARAMS
+[ 1946.141315] PRE RACK_INIT
+[ 1948.362807] firewire_core 0000:02:00.0: unsolicited response
+(source ffc0, tlabel 17)
+[ 1948.391559] DONE RACK_INIT
+[ 1948.391561] DONE SET_SYNC
+[ 1948.391718] START PCM_OPEN
+[ 1948.391720] END HW_PARAMSDONE HW_PARAMS
+[ 1948.391721] PRE RACK_INIT
+[ 1948.496308] DONE RACK_INIT
+[ 1948.496310] DONE SET_SYNC
+[ 1948.496439] ------------[ cut here ]------------
+[ 1948.496444] WARNING: CPU: 2 PID: 4820 at
+/zam/git/snd-firewire-improve/amdtp.c:149
+amdtp_stream_set_params+0x190/0x1c0 [snd_firewire_lib]()
+[ 1948.496445] Modules linked in: snd_003(O) snd_firewire_lib(O)
+snd_pcm snd_page_alloc snd_seq_midi snd_rawmidi snd_seq_midi_event
+snd_seq snd_timer snd_seq_device snd soundcore parport_pc ppdev
+dm_crypt x86_pkg_temp_thermal coretemp kvm_intel kvm dm_multipath
+scsi_dh microcode psmouse serio_raw lpc_ich mac_hid shpchp lp parport
+raid10 raid456 async_pq async_xor async_memcpy async_raid6_recov
+async_tx raid0 multipath linear dm_mirror dm_region_hash dm_log btrfs
+raid6_pq xor zlib_deflate libcrc32c hid_generic usbhid hid raid1
+ghash_clmulni_intel cryptd r8169 mii firewire_ohci i915
+drm_kms_helper drm i2c_algo_bit button video firewire_core crc_itu_t
+[last unloaded: snd_003]
+[ 1948.496474] CPU: 2 PID: 4820 Comm: jackd Tainted: G        W  O
+3.11.4-003final #1
+[ 1948.496475] Hardware name: Gigabyte Technology Co., Ltd. To be
+filled by O.E.M./B75M-D3H, BIOS F12 10/26/2012
+[ 1948.496476]  0000000000000095 ffff880600055ba8 ffffffff815fdc44
+0000000000000007
+[ 1948.496478]  0000000000000000 ffff880600055be8 ffffffff81047f1c
+ffff880600055bc8
+[ 1948.496480]  ffff880601eecd10 0000000000000012 000000000000bb80
+0000000000000001
+[ 1948.496482] Call Trace:
+[ 1948.496486]  [<ffffffff815fdc44>] dump_stack+0x4f/0x84
+[ 1948.496490]  [<ffffffff81047f1c>] warn_slowpath_common+0x8c/0xc0
+[ 1948.496491]  [<ffffffff81047f6a>] warn_slowpath_null+0x1a/0x20
+[ 1948.496494]  [<ffffffffa0468690>]
+amdtp_stream_set_params+0x190/0x1c0 [snd_firewire_lib]
+[ 1948.496496]  [<ffffffffa046fcae>]
+snd_efw_stream_start.part.6+0x3e/0x80 [snd_003]
+[ 1948.496498]  [<ffffffffa046fec0>]
+snd_efw_stream_start_duplex+0x130/0x160 [snd_003]
+[ 1948.496500]  [<ffffffffa046f4c7>] pcm_capture_prepare+0x37/0x60
+[snd_003]
+[ 1948.496504]  [<ffffffffa04481bb>] snd_pcm_do_prepare+0x1b/0x30
+[snd_pcm]
+[ 1948.496506]  [<ffffffffa0447d86>] snd_pcm_action_single+0x36/0x80
+[snd_pcm]
+[ 1948.496509]  [<ffffffffa0447e4e>]
+snd_pcm_action_nonatomic+0x7e/0x90 [snd_pcm]
+[ 1948.496512]  [<ffffffffa044a93b>]
+snd_pcm_common_ioctl1+0x6cb/0xc40 [snd_pcm]
+[ 1948.496514]  [<ffffffffa044afe7>]
+snd_pcm_capture_ioctl1+0x137/0x260 [snd_pcm]
+[ 1948.496517]  [<ffffffffa044b144>] snd_pcm_capture_ioctl+0x34/0x40
+[snd_pcm]
+[ 1948.496519]  [<ffffffff8118282b>] do_vfs_ioctl+0x8b/0x4f0
+[ 1948.496522]  [<ffffffff8118ceda>] ? fget_light+0x6a/0x100
+[ 1948.496523]  [<ffffffff81182d21>] SyS_ioctl+0x91/0xb0
+[ 1948.496526]  [<ffffffff8160cb06>] system_call_fastpath+0x1a/0x1f
+[ 1948.496527] ---[ end trace fdd23b22af1bca0f ]---
+[ 1948.496528] ------------[ cut here ]------------
+[ 1948.496531] WARNING: CPU: 2 PID: 4820 at
+/zam/git/snd-firewire-improve/amdtp.c:872
+amdtp_stream_start+0x46/0x2a0 [snd_firewire_lib]()
+[ 1948.496531] Modules linked in: snd_003(O) snd_firewire_lib(O)
+snd_pcm snd_page_alloc snd_seq_midi snd_rawmidi snd_seq_midi_event
+snd_seq snd_timer snd_seq_device snd soundcore parport_pc ppdev
+dm_crypt x86_pkg_temp_thermal coretemp kvm_intel kvm dm_multipath
+scsi_dh microcode psmouse serio_raw lpc_ich mac_hid shpchp lp parport
+raid10 raid456 async_pq async_xor async_memcpy async_raid6_recov
+async_tx raid0 multipath linear dm_mirror dm_region_hash dm_log btrfs
+raid6_pq xor zlib_deflate libcrc32c hid_generic usbhid hid raid1
+ghash_clmulni_intel cryptd r8169 mii firewire_ohci i915
+drm_kms_helper drm i2c_algo_bit button video firewire_core crc_itu_t
+[last unloaded: snd_003]
+[ 1948.496553] CPU: 2 PID: 4820 Comm: jackd Tainted: G        W  O
+3.11.4-003final #1
+[ 1948.496554] Hardware name: Gigabyte Technology Co., Ltd. To be
+filled by O.E.M./B75M-D3H, BIOS F12 10/26/2012
+[ 1948.496555]  0000000000000368 ffff880600055bb8 ffffffff815fdc44
+0000000000000007
+[ 1948.496557]  0000000000000000 ffff880600055bf8 ffffffff81047f1c
+0000000000000012
+[ 1948.496559]  ffff880601eecd10 ffff880601eecf60 0000000000000001
+ffff880601eecd28
+[ 1948.496560] Call Trace:
+[ 1948.496562]  [<ffffffff815fdc44>] dump_stack+0x4f/0x84
+[ 1948.496564]  [<ffffffff81047f1c>] warn_slowpath_common+0x8c/0xc0
+[ 1948.496566]  [<ffffffff81047f6a>] warn_slowpath_null+0x1a/0x20
+[ 1948.496568]  [<ffffffffa0469626>] amdtp_stream_start+0x46/0x2a0
+[snd_firewire_lib]
+[ 1948.496570]  [<ffffffffa046fcbf>]
+snd_efw_stream_start.part.6+0x4f/0x80 [snd_003]
+[ 1948.496572]  [<ffffffffa046fec0>]
+snd_efw_stream_start_duplex+0x130/0x160 [snd_003]
+[ 1948.496574]  [<ffffffffa046f4c7>] pcm_capture_prepare+0x37/0x60
+[snd_003]
+[ 1948.496577]  [<ffffffffa04481bb>] snd_pcm_do_prepare+0x1b/0x30
+[snd_pcm]
+[ 1948.496579]  [<ffffffffa0447d86>] snd_pcm_action_single+0x36/0x80
+[snd_pcm]
+[ 1948.496582]  [<ffffffffa0447e4e>]
+snd_pcm_action_nonatomic+0x7e/0x90 [snd_pcm]
+[ 1948.496584]  [<ffffffffa044a93b>]
+snd_pcm_common_ioctl1+0x6cb/0xc40 [snd_pcm]
+[ 1948.496587]  [<ffffffffa044afe7>]
+snd_pcm_capture_ioctl1+0x137/0x260 [snd_pcm]
+[ 1948.496589]  [<ffffffffa044b144>] snd_pcm_capture_ioctl+0x34/0x40
+[snd_pcm]
+[ 1948.496591]  [<ffffffff8118282b>] do_vfs_ioctl+0x8b/0x4f0
+[ 1948.496593]  [<ffffffff8118ceda>] ? fget_light+0x6a/0x100
+[ 1948.496594]  [<ffffffff81182d21>] SyS_ioctl+0x91/0xb0
+[ 1948.496596]  [<ffffffff8160cb06>] system_call_fastpath+0x1a/0x1f
+[ 1948.496597] ---[ end trace fdd23b22af1bca10 ]---
+
