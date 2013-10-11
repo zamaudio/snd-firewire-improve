@@ -23,85 +23,6 @@
 
 static DEFINE_MUTEX(devices_mutex);
 
-/*
-static int digi_hw_lock(struct snd_efw *digi)
-{
-        int err;
-
-        spin_lock_irq(&digi->lockhw);
-
-        if (digi->dev_lock_count == 0) {
-                digi->dev_lock_count = -1;
-                err = 0;
-        } else {
-                err = -EBUSY;
-        }
-
-        spin_unlock_irq(&digi->lockhw);
-
-        return err;
-}
-
-static int digi_hw_unlock(struct snd_efw *digi)
-{
-        int err;
-
-        spin_lock_irq(&digi->lockhw);
-        
-        if (digi->dev_lock_count == -1) {
-                digi->dev_lock_count = 0;
-                err = 0;
-        } else {
-                err = -EBADFD;
-        }
-
-        spin_unlock_irq(&digi->lockhw);
-
-        return err;
-}       
-
-static void digi_lock_changed(struct snd_efw *digi)
-{
-        digi->dev_lock_changed = true;
-        wake_up(&digi->hwdep_wait);
-}
-
-static int digi_try_lock(struct snd_efw *digi)
-{
-        int err;
-
-        spin_lock_irq(&digi->lockhw);
-
-        if (digi->dev_lock_count < 0) {
-                err = -EBUSY;
-                goto out;
-        }
-
-        if (digi->dev_lock_count++ == 0)
-                digi_lock_changed(digi);
-        err = 0;
-
-out:
-        spin_unlock_irq(&digi->lockhw);
-
-        return err;
-}
-
-static void digi_unlock(struct snd_efw *digi)
-{
-        spin_lock_irq(&digi->lockhw);
-
-        if (WARN_ON(digi->dev_lock_count <= 0))
-                goto out;
-
-        if (--digi->dev_lock_count == 0)
-                digi_lock_changed(digi);
-
-out:
-        spin_unlock_irq(&digi->lockhw);
-}
-*/
-
 static int
 pcm_init_hw_params(struct snd_efw *efw,
 		   struct snd_pcm_substream *substream)
@@ -131,7 +52,7 @@ pcm_init_hw_params(struct snd_efw *efw,
 	substream->runtime->hw = hardware;
 	substream->runtime->delay = substream->runtime->hw.fifo_size;
 
-        //substream->runtime->hw.rates = 0;
+        substream->runtime->hw.rates = 0;
         substream->runtime->hw.rates |= snd_pcm_rate_to_rate_bit(48000);
         snd_pcm_limit_hw_rates(substream->runtime);
 
@@ -181,10 +102,10 @@ static int pcm_open(struct snd_pcm_substream *substream)
 
 	printk("DONE HW_PARAMS\n");
 	
-	substream->runtime->hw.channels_min = 19;
-	substream->runtime->hw.channels_max = 19;
-	substream->runtime->hw.rate_min = 48000;
-	substream->runtime->hw.rate_max = 48000;
+//	substream->runtime->hw.channels_min = 19;
+//	substream->runtime->hw.channels_max = 19;
+//	substream->runtime->hw.rate_min = 48000;
+//	substream->runtime->hw.rate_max = 48000;
 
 	snd_pcm_set_sync(substream);
 	printk("DONE SET_SYNC\n");

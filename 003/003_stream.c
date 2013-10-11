@@ -105,7 +105,7 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 		printk("ALLOCATED ISO RESOURCES RX\n");
 	}
 	
-	err = amdtp_stream_init(stream, efw->unit, s_dir, CIP_NONBLOCKING);
+	err = amdtp_stream_init(stream, efw->unit, s_dir, CIP_SYNC_TO_DEVICE);
 	printk("AMDTP INIT DONE\n");
 
 	return 0;
@@ -208,7 +208,7 @@ static int get_roles(struct snd_efw *efw,
 	//err = snd_efw_command_get_clock_source(efw, &clock_source);
 	//if (err < 0)
 	//	goto end;
-	clock_source = SND_EFW_CLOCK_SOURCE_SYTMATCH+1;
+	clock_source = SND_EFW_CLOCK_SOURCE_SYTMATCH;
 
 	if (clock_source != SND_EFW_CLOCK_SOURCE_SYTMATCH) {
 		*master = &efw->tx_stream;

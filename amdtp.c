@@ -16,6 +16,7 @@
 #include <sound/pcm.h>
 #include <sound/rawmidi.h>
 #include "amdtp.h"
+#include "003/digimagic.h"
 
 #define TICKS_PER_CYCLE		3072
 #define CYCLES_PER_SECOND	8000
@@ -52,6 +53,15 @@
 
 #define IN_PACKET_HEADER_SIZE	4
 #define OUT_PACKET_HEADER_SIZE	0
+
+#define SWAP_1_3_CONST(x) x
+
+/*
+#define SWAP_1_3_CONST(x)   ((((x) & 0x000000FF) << 16) |   \
+                             (((x) & 0x0000FF00))       |   \
+                             (((x) & 0x00FF0000) >> 16) |   \
+                             (((x) & 0xFF000000)))
+*/
 
 static const unsigned int amdtp_syt_intervals[] = {
 	[CIP_SFC_32000]  =  8,
@@ -91,7 +101,7 @@ int amdtp_stream_init(struct amdtp_stream *s, struct fw_unit *unit,
 	s->packet_index = 0;
 
 	s->pcm = NULL;
-	s->blocks_for_midi = 0; //UINT_MAX;
+	s->blocks_for_midi = 0;
 
 	init_waitqueue_head(&s->run_wait);
 	s->run = false;
@@ -170,10 +180,10 @@ sfc_found:
 					amdtp_syt_intervals[sfc]/ rate;
 
 	/* set the position of PCM and MIDI channels */
-	for (i = 0; i < pcm_channels; i++)
-		s->pcm_positions[i] = i;
-	for (i = 0; i < midi_channels; i++)
-		s->midi_positions[i] = pcm_channels + i;
+	for (i = 1; i < pcm_channels+1; i++)
+		s->pcm_positions[i-1] = i;
+	//for (i = 0; i < midi_channels; i++)
+		s->midi_positions[0] = 0;
 }
 EXPORT_SYMBOL(amdtp_stream_set_params);
 
@@ -381,23 +391,41 @@ static void amdtp_write_s32(struct amdtp_stream *s,
 			    __be32 *buffer, unsigned int frames)
 {
 	struct snd_pcm_runtime *runtime = pcm->runtime;
-	unsigned int remaining_frames, i, c;
+	unsigned int channels, remaining_frames, frame_step, i, c;
 	const u32 *src;
+	DigiMagic digistate;
 
+	channels = s->pcm_channels;
 	src = (void *)runtime->dma_area +
 			frames_to_bytes(runtime, s->pcm_buffer_pointer);
 	remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
+	frame_step = s->data_block_quadlets - channels;
 
 	for (i = 0; i < frames; ++i) {
 		for (c = 0; c < s->pcm_channels; ++c) {
 			buffer[s->pcm_positions[c]] =
 					cpu_to_be32((*src >> 8) | 0x40000000);
 			src++;
+			buffer++;
 		}
-		buffer += s->data_block_quadlets;
+		buffer += frame_step;
 		if (--remaining_frames == 0)
 			src = (void *)runtime->dma_area;
 	}
+
+        for (i = 0; i < frames; ++i) {
+                digi_state_reset(&digistate);
+                for (c = 0; c < channels; ++c) {
+                        buffer[s->pcm_positions[c]] =
+                                        cpu_to_be32((*src >> 8) | 0x40000000);
+                        digi_encode_step(&digistate, &buffer[s->pcm_positions[c]]);
+                        src++;
+                }
+                buffer += frame_step;
+                if (--remaining_frames == 0)
+                        src = (void *)runtime->dma_area;
+        }
+
 }
 
 static void amdtp_write_s16(struct amdtp_stream *s,
