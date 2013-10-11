@@ -23,6 +23,7 @@
 
 static DEFINE_MUTEX(devices_mutex);
 
+/*
 static int digi_hw_lock(struct snd_efw *digi)
 {
         int err;
@@ -99,6 +100,7 @@ static void digi_unlock(struct snd_efw *digi)
 out:
         spin_unlock_irq(&digi->lockhw);
 }
+*/
 
 static int
 pcm_init_hw_params(struct snd_efw *efw,
@@ -124,7 +126,7 @@ pcm_init_hw_params(struct snd_efw *efw,
 		.fifo_size = 0,
 	};
 	
-	int err, i;
+	int err;
 
 	substream->runtime->hw = hardware;
 	substream->runtime->delay = substream->runtime->hw.fifo_size;
@@ -161,7 +163,7 @@ pcm_init_hw_params(struct snd_efw *efw,
 		goto end;
 
 	err = 0;
-	printk("END HW_PARAMS");
+	printk("END HW_PARAMS\n");
 end:
 	return err;
 }

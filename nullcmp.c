@@ -44,6 +44,7 @@ enum bus_reset_handling {
 	SUCCEED_ON_BUS_RESET,
 };
 
+/*
 static __printf(2, 3)
 void cmp_error(struct cmp_connection *c, const char *fmt, ...)
 {
@@ -100,7 +101,7 @@ static int pcr_modify(struct cmp_connection *c,
 
 		rcode = RCODE_COMPLETE;
 		if (rcode == RCODE_COMPLETE) {
-			if (buffer[0] == old_arg) /* success? */
+			if (buffer[0] == old_arg)
 				break;
 
 			if (check) {
@@ -124,7 +125,7 @@ io_error:
 bus_reset:
 	return bus_reset_handling == ABORT_ON_BUS_RESET ? -EAGAIN : 0;
 }
-
+*/
 
 /**
  * cmp_connection_init - initializes a connection manager
@@ -137,8 +138,8 @@ int cmp_connection_init(struct cmp_connection *c,
 			enum cmp_direction direction,
 			unsigned int pcr_index)
 {
-	__be32 mpr_be;
-	u32 mpr;
+//	__be32 mpr_be;
+//	u32 mpr;
 	int err;
 
 //	err = snd_fw_transaction(unit, TCODE_READ_QUADLET_REQUEST,
@@ -182,7 +183,7 @@ void cmp_connection_destroy(struct cmp_connection *c)
 }
 EXPORT_SYMBOL(cmp_connection_destroy);
 
-
+/*
 static __be32 ipcr_set_modify(struct cmp_connection *c, __be32 ipcr)
 {
 	ipcr &= ~cpu_to_be32(PCR_BCAST_CONN |
@@ -198,11 +199,10 @@ static int get_overhead_id(struct cmp_connection *c)
 {
 	int id;
 
-	/*
-	 * Apply "oPCR overhead ID encoding"
-	 * The encoding table can convert up to 512.
-	 * Here the value over 512 is converted as the same way as 512.
-	 */
+	// Apply "oPCR overhead ID encoding"
+	// The encoding table can convert up to 512.
+	// Here the value over 512 is converted as the same way as 512.
+	
 	id = DIV_ROUND_UP(c->resources.bandwidth_overhead, 32);
 	if (id >= 16)
 		id = 0;
@@ -234,7 +234,7 @@ static __be32 opcr_set_modify(struct cmp_connection *c, __be32 opcr)
 	opcr |= cpu_to_be32(spd << OPCR_SPEED_SHIFT);
 	opcr |= cpu_to_be32(get_overhead_id(c) << OPCR_OVERHEAD_ID_SHIFT);
 
-	/* NOTE: payload field is set by target device */
+	// NOTE: payload field is set by target device
 
 	return opcr;
 }
@@ -253,6 +253,7 @@ static int pcr_set_check(struct cmp_connection *c, __be32 pcr)
 
 	return 0;
 }
+*/
 
 /**
  * cmp_connection_establish - establish a connection to the target
@@ -283,14 +284,14 @@ retry_after_bus_reset:
 					max_payload_bytes, c->speed);
 	if (err < 0)
 		goto err_mutex;
-
+/*
 	if (c->direction == CMP_OUTPUT)
 		err = pcr_modify(c, opcr_set_modify, pcr_set_check,
 				 ABORT_ON_BUS_RESET);
 	else
 		err = pcr_modify(c, ipcr_set_modify, pcr_set_check,
 				 ABORT_ON_BUS_RESET);
-
+*/
 	if (err == -EAGAIN) {
 		fw_iso_resources_free(&c->resources);
 		goto retry_after_bus_reset;
@@ -337,7 +338,7 @@ int cmp_connection_update(struct cmp_connection *c)
 	err = fw_iso_resources_update(&c->resources);
 	if (err < 0)
 		goto err_unconnect;
-
+/*
 	if (c->direction == CMP_OUTPUT)
 		err = pcr_modify(c, opcr_set_modify, pcr_set_check,
 				 SUCCEED_ON_BUS_RESET);
@@ -347,12 +348,12 @@ int cmp_connection_update(struct cmp_connection *c)
 
 	if (err < 0)
 		goto err_resources;
-
+*/
 	mutex_unlock(&c->mutex);
 
 	return 0;
 
-err_resources:
+//err_resources:
 	fw_iso_resources_free(&c->resources);
 err_unconnect:
 	c->connected = false;
@@ -362,10 +363,12 @@ err_unconnect:
 }
 EXPORT_SYMBOL(cmp_connection_update);
 
+/*
 static __be32 pcr_break_modify(struct cmp_connection *c, __be32 pcr)
 {
 	return pcr & ~cpu_to_be32(PCR_BCAST_CONN | PCR_P2P_CONN_MASK);
 }
+*/
 
 /**
  * cmp_connection_break - break the connection to the target
@@ -377,7 +380,7 @@ static __be32 pcr_break_modify(struct cmp_connection *c, __be32 pcr)
  */
 void cmp_connection_break(struct cmp_connection *c)
 {
-	int err;
+//	int err;
 
 	mutex_lock(&c->mutex);
 
@@ -385,11 +388,11 @@ void cmp_connection_break(struct cmp_connection *c)
 		mutex_unlock(&c->mutex);
 		return;
 	}
-
+/*
 	err = pcr_modify(c, pcr_break_modify, NULL, SUCCEED_ON_BUS_RESET);
 	if (err < 0)
 		cmp_error(c, "plug is still connected\n");
-
+*/
 	fw_iso_resources_free(&c->resources);
 
 	c->connected = false;

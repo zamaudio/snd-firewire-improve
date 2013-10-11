@@ -186,6 +186,8 @@ static void snd_efw_stream_destroy(struct snd_efw *efw,
 				   struct amdtp_stream *stream)
 {
 	snd_efw_stream_stop(efw, stream);
+	rack_shutdown(efw);
+
 // 	digi_free_resources(efw, stream);
 
 //	if (stream == &efw->tx_stream)
@@ -201,7 +203,7 @@ static int get_roles(struct snd_efw *efw,
 		     struct amdtp_stream **master, struct amdtp_stream **slave)
 {
 	enum snd_efw_clock_source clock_source;
-	int err;
+	//int err;
 
 	//err = snd_efw_command_get_clock_source(efw, &clock_source);
 	//if (err < 0)
@@ -218,7 +220,7 @@ static int get_roles(struct snd_efw *efw,
 		*sync_mode = ~CIP_SYNC_TO_DEVICE;
 	}
 //end:
-	return err;
+	return 0;
 }
 
 int snd_efw_stream_init_duplex(struct snd_efw *efw)
