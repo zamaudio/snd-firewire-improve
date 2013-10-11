@@ -114,8 +114,8 @@ pcm_init_hw_params(struct snd_efw *efw,
 			SNDRV_PCM_INFO_MMAP_VALID |
 			SNDRV_PCM_INFO_BLOCK_TRANSFER,
 		.formats = SNDRV_PCM_FMTBIT_S32,
-		.channels_min = 18,
-		.channels_max = 18,
+		.channels_min = 19,
+		.channels_max = 19,
 		.buffer_bytes_max = 1024 * 1024 * 1024,
 		.period_bytes_min = 256,
 		.period_bytes_max = 1024 * 1024 * 1024 / 2,
@@ -134,8 +134,8 @@ pcm_init_hw_params(struct snd_efw *efw,
         snd_pcm_limit_hw_rates(substream->runtime);
 
 	substream->runtime->hw.formats = SNDRV_PCM_FMTBIT_S32;
-	substream->runtime->hw.channels_min = 18;
-	substream->runtime->hw.channels_max = 18;
+	substream->runtime->hw.channels_min = 19;
+	substream->runtime->hw.channels_max = 19;
 
 	/* AM824 in IEC 61883-6 can deliver 24bit data */
 	err = snd_pcm_hw_constraint_msbits(substream->runtime, 0, 32, 24);
@@ -179,8 +179,8 @@ static int pcm_open(struct snd_pcm_substream *substream)
 
 	printk("DONE HW_PARAMS\n");
 	
-	substream->runtime->hw.channels_min = 18;
-	substream->runtime->hw.channels_max = 18;
+	substream->runtime->hw.channels_min = 19;
+	substream->runtime->hw.channels_max = 19;
 	substream->runtime->hw.rate_min = 48000;
 	substream->runtime->hw.rate_max = 48000;
 
@@ -306,7 +306,6 @@ static struct snd_pcm_ops pcm_capture_ops = {
 	.trigger	= pcm_capture_trigger,
 	.pointer	= pcm_capture_pointer,
 	.page		= snd_pcm_lib_get_vmalloc_page,
-	.mmap		= snd_pcm_lib_mmap_vmalloc,
 };
 
 static struct snd_pcm_ops pcm_playback_ops = {
@@ -319,6 +318,7 @@ static struct snd_pcm_ops pcm_playback_ops = {
 	.trigger	= pcm_playback_trigger,
 	.pointer	= pcm_playback_pointer,
 	.page		= snd_pcm_lib_get_vmalloc_page,
+	.mmap		= snd_pcm_lib_mmap_vmalloc,
 };
 
 int snd_efw_create_pcm_devices(struct snd_efw *efw)

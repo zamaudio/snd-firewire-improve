@@ -255,10 +255,19 @@ static unsigned int calculate_data_blocks(struct amdtp_stream *s)
 
 	if (s->flags & CIP_BLOCKING)
 		data_blocks = amdtp_syt_intervals[s->sfc];
-	else if (!cip_sfc_is_base_44100(s->sfc))
+	else if (!cip_sfc_is_base_44100(s->sfc)) {
 		/* Sample_rate / 8000 is an integer, and precomputed. */
-		data_blocks = s->data_block_state;
-	else {
+		//data_blocks = s->data_block_state;
+		phase = s->data_block_state;
+		if (phase >= 16)
+			phase = 0;
+
+		data_blocks = ((phase % 16) > 7) ? 5 : 7;
+		if (++phase >= 16)
+			phase = 0;
+		s->data_block_state = phase;
+
+	} else {
 		phase = s->data_block_state;
 
 		/*

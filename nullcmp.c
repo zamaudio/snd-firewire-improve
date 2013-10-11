@@ -80,6 +80,8 @@ static int pcr_modify(struct cmp_connection *c,
 		      int (*check)(struct cmp_connection *c, __be32 pcr),
 		      enum bus_reset_handling bus_reset_handling)
 {
+	return 0;
+
 	struct fw_device *device = fw_parent_device(c->resources.unit);
 	int generation = c->resources.generation;
 	int rcode, errors = 0;
@@ -141,14 +143,14 @@ int cmp_connection_init(struct cmp_connection *c,
 
 //	err = snd_fw_transaction(unit, TCODE_READ_QUADLET_REQUEST,
 //				 get_offset(c, true), &mpr_be, 4);
-	err = 0;
-	if (err < 0)
-		return err;
-	mpr = be32_to_cpu(mpr_be);
-
-	if (pcr_index >= (mpr & MPR_PLUGS_MASK))
-		return -EINVAL;
-
+//	err = 0;
+//	if (err < 0)
+//		return err;
+//	mpr = be32_to_cpu(mpr_be);
+//
+//	if (pcr_index >= (mpr & MPR_PLUGS_MASK))
+//		return -EINVAL;
+//
 	err = fw_iso_resources_init(&c->resources, unit);
 	if (err < 0)
 		return err;
