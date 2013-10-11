@@ -25,12 +25,12 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 	int max_bytes;
 	int err;
 	efw->iso_rx.channel = 1;
-	efw->iso_rx.bandwidth = 19*16;
-	efw->iso_rx.bandwidth_overhead = 8;
+	efw->iso_rx.bandwidth = 19*8*4;
+	efw->iso_rx.bandwidth_overhead = 2*4;
 
 	efw->iso_tx.channel = 0;
-	efw->iso_tx.bandwidth = 19*16;
-	efw->iso_tx.bandwidth_overhead = 8;
+	efw->iso_tx.bandwidth = 19*8*4;
+	efw->iso_tx.bandwidth_overhead = 2*4;
 	
 	max_bytes = efw->iso_rx.bandwidth + efw->iso_rx.bandwidth_overhead;
 
@@ -95,14 +95,14 @@ static int snd_efw_stream_start(struct snd_efw *efw,
 	//mode = snd_efw_get_multiplier_mode(sampling_rate);
 	mode = 0;
 	if (stream == &efw->tx_stream) {
-		pcm_channels = efw->pcm_capture_channels[mode];
-		midi_channels = DIV_ROUND_UP(efw->midi_output_ports, 8);
-		amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
+		pcm_channels = 18;
+		midi_channels = 1;
+		amdtp_stream_set_params(stream, sampling_rate, 18, 1);
 		err = amdtp_stream_start(stream, 0, SCODE_400);
 	} else {
-		pcm_channels = efw->pcm_playback_channels[mode];
-		midi_channels = DIV_ROUND_UP(efw->midi_input_ports, 8);
-		amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
+		pcm_channels = 18;
+		midi_channels = 1;
+		amdtp_stream_set_params(stream, sampling_rate, 18, 1);
 		err = amdtp_stream_start(stream, 1, SCODE_400);
 	}
 

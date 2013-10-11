@@ -25,6 +25,7 @@
 #define TRANSFER_DELAY_TICKS	0x2e00 /* 479.17 µs */
 
 #define ISO_DATA_LENGTH_SHIFT	16
+
 #define TAG_CIP			1
 
 #define CIP_EOH_MASK		0x80000000
@@ -47,7 +48,7 @@
 #define DBC_THREADSHOULD	(AMDTP_DBC_MASK / 2)
 
 /* TODO: make these configurable */
-#define INTERRUPT_INTERVAL	16
+#define INTERRUPT_INTERVAL	8
 #define QUEUE_LENGTH		96
 #define STREAM_TIMEOUT_MS	100
 
@@ -101,14 +102,14 @@ int amdtp_stream_init(struct amdtp_stream *s, struct fw_unit *unit,
 	s->packet_index = 0;
 
 	s->pcm = NULL;
-	s->blocks_for_midi = UINT_MAX;
+	s->blocks_for_midi = 1;//UINT_MAX;
 
 	init_waitqueue_head(&s->run_wait);
 	s->run = false;
 	s->sync_slave = ERR_PTR(-1);
 
 	s->sort_table = NULL;
-	s->left_packets = NULL;
+	s->left_packets = 1; //NULL;
 
 	return 0;
 }
@@ -180,10 +181,10 @@ sfc_found:
 					amdtp_syt_intervals[sfc]/ rate;
 
 	/* set the position of PCM and MIDI channels */
-	for (i = 1; i < pcm_channels+1; i++)
-		s->pcm_positions[i-1] = i;
-	//for (i = 0; i < midi_channels; i++)
-		s->midi_positions[0] = 0;
+	for (i = 0; i < midi_channels; i++)
+		s->midi_positions[i] = i;
+	for (i = 0; i < pcm_channels; i++)
+		s->pcm_positions[i] = i + midi_channels;
 }
 EXPORT_SYMBOL(amdtp_stream_set_params);
 
@@ -385,6 +386,31 @@ static void packet_sort(struct sort_table *tbl, unsigned int len)
 		i = j;
 	} while (i < len);
 }
+
+static void amdtp_write_s32_org(struct amdtp_stream *s,
+			    struct snd_pcm_substream *pcm,
+			    __be32 *buffer, unsigned int frames)
+{
+	struct snd_pcm_runtime *runtime = pcm->runtime;
+	unsigned int remaining_frames, i, c;
+	const u32 *src;
+
+	src = (void *)runtime->dma_area +
+			frames_to_bytes(runtime, s->pcm_buffer_pointer);
+	remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
+
+	for (i = 0; i < frames; ++i) {
+		for (c = 0; c < s->pcm_channels; ++c) {
+			buffer[s->pcm_positions[c]] =
+					cpu_to_be32((*src >> 8) | 0x40000000);
+			src++;
+		}
+		buffer += s->data_block_quadlets;
+		if (--remaining_frames == 0)
+			src = (void *)runtime->dma_area;
+	}
+}
+
 
 static void amdtp_write_s32(struct amdtp_stream *s,
 			    struct snd_pcm_substream *pcm,
@@ -741,7 +767,7 @@ static void handle_in_packet(struct amdtp_stream *s,
 	 * "8" at any sampling rates but actually it's different at
 	 * 96.0/88.2 kHz.
 	 */
-	data_blocks = (payload_quadlets - 2) / s->data_block_quadlets;
+	data_blocks = 6;
 
 	buffer += 2;
 
