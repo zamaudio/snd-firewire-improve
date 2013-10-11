@@ -33,47 +33,6 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 	efw->iso_tx.bandwidth_overhead = 8;
 	
 	max_bytes = efw->iso_rx.bandwidth + efw->iso_rx.bandwidth_overhead;
-/*
-        efw->rx_stream.strm.midi_quadlets[0] = 0;
-        efw->rx_stream.strm.pcm_quadlets[0] = 1;
-        efw->rx_stream.strm.pcm_quadlets[1] = 2;
-        efw->rx_stream.strm.pcm_quadlets[2] = 3;
-        efw->rx_stream.strm.pcm_quadlets[3] = 4;
-        efw->rx_stream.strm.pcm_quadlets[4] = 5;
-        efw->rx_stream.strm.pcm_quadlets[5] = 6;
-        efw->rx_stream.strm.pcm_quadlets[6] = 7;
-        efw->rx_stream.strm.pcm_quadlets[7] = 8;
-        efw->rx_stream.strm.pcm_quadlets[8] = 9;
-        efw->rx_stream.strm.pcm_quadlets[9] = 10;
-        efw->rx_stream.strm.pcm_quadlets[10] = 11;
-        efw->rx_stream.strm.pcm_quadlets[11] = 12;
-        efw->rx_stream.strm.pcm_quadlets[12] = 13;
-        efw->rx_stream.strm.pcm_quadlets[13] = 14;
-        efw->rx_stream.strm.pcm_quadlets[14] = 15;
-        efw->rx_stream.strm.pcm_quadlets[15] = 16;
-        efw->rx_stream.strm.pcm_quadlets[16] = 17;
-        efw->rx_stream.strm.pcm_quadlets[17] = 18;
-	
-        efw->tx_stream.strm.midi_quadlets[0] = 0;
-        efw->tx_stream.strm.pcm_quadlets[0] = 1;
-        efw->tx_stream.strm.pcm_quadlets[1] = 2;
-        efw->tx_stream.strm.pcm_quadlets[2] = 3;
-        efw->tx_stream.strm.pcm_quadlets[3] = 4;
-        efw->tx_stream.strm.pcm_quadlets[4] = 5;
-        efw->tx_stream.strm.pcm_quadlets[5] = 6;
-        efw->tx_stream.strm.pcm_quadlets[6] = 7;
-        efw->tx_stream.strm.pcm_quadlets[7] = 8;
-        efw->tx_stream.strm.pcm_quadlets[8] = 9;
-        efw->tx_stream.strm.pcm_quadlets[9] = 10;
-        efw->tx_stream.strm.pcm_quadlets[10] = 11;
-        efw->tx_stream.strm.pcm_quadlets[11] = 12;
-        efw->tx_stream.strm.pcm_quadlets[12] = 13;
-        efw->tx_stream.strm.pcm_quadlets[13] = 14;
-        efw->tx_stream.strm.pcm_quadlets[14] = 15;
-        efw->tx_stream.strm.pcm_quadlets[15] = 16;
-        efw->tx_stream.strm.pcm_quadlets[16] = 17;
-        efw->tx_stream.strm.pcm_quadlets[17] = 18;
-*/	
 
 	if (stream == &efw->tx_stream) {
 		s_dir = AMDTP_IN_STREAM;

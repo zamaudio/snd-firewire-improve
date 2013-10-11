@@ -101,7 +101,7 @@ int amdtp_stream_init(struct amdtp_stream *s, struct fw_unit *unit,
 	s->packet_index = 0;
 
 	s->pcm = NULL;
-	s->blocks_for_midi = 0;
+	s->blocks_for_midi = UINT_MAX;
 
 	init_waitqueue_head(&s->run_wait);
 	s->run = false;
@@ -397,14 +397,13 @@ static void amdtp_write_s32(struct amdtp_stream *s,
 
 	channels = s->pcm_channels;
 	src = (void *)runtime->dma_area +
-			frames_to_bytes(runtime, s->pcm_buffer_pointer);
+			s->pcm_buffer_pointer * (runtime->frame_bits / 8);
 	remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
 	frame_step = s->data_block_quadlets - channels;
 
 	for (i = 0; i < frames; ++i) {
 		for (c = 0; c < s->pcm_channels; ++c) {
-			buffer[s->pcm_positions[c]] =
-					cpu_to_be32((*src >> 8) | 0x40000000);
+			*buffer = cpu_to_be32((*src >> 8) | 0x40000000);
 			src++;
 			buffer++;
 		}
@@ -415,7 +414,7 @@ static void amdtp_write_s32(struct amdtp_stream *s,
 
         for (i = 0; i < frames; ++i) {
                 digi_state_reset(&digistate);
-                for (c = 0; c < channels; ++c) {
+                for (c = 0; c < s->pcm_channels; ++c) {
                         buffer[s->pcm_positions[c]] =
                                         cpu_to_be32((*src >> 8) | 0x40000000);
                         digi_encode_step(&digistate, &buffer[s->pcm_positions[c]]);
