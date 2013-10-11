@@ -47,7 +47,7 @@
 
 /* TODO: make these configurable */
 #define INTERRUPT_INTERVAL	16
-#define QUEUE_LENGTH		48
+#define QUEUE_LENGTH		96
 #define STREAM_TIMEOUT_MS	100
 
 #define IN_PACKET_HEADER_SIZE	4
@@ -91,7 +91,7 @@ int amdtp_stream_init(struct amdtp_stream *s, struct fw_unit *unit,
 	s->packet_index = 0;
 
 	s->pcm = NULL;
-	s->blocks_for_midi = UINT_MAX;
+	s->blocks_for_midi = 0; //UINT_MAX;
 
 	init_waitqueue_head(&s->run_wait);
 	s->run = false;
@@ -309,7 +309,6 @@ static unsigned int calculate_syt(struct amdtp_stream *s,
 		 * elements is about 1386.23.  Rounding the results of this
 		 * formula to the SYT precision results in a sequence of
 		 * differences that begins with:
-
 		 *   1386 1386 1387 1386 1386 1386 1387 1386 1386 1386 1387 ...
 		 * This code generates _exactly_ the same sequence.
 		 */
@@ -482,6 +481,20 @@ static void amdtp_fill_pcm_silence(struct amdtp_stream *s,
 		buffer += s->data_block_quadlets;
 	}
 }
+
+/*
+static void amdtp_fill_midi_as_pcm(struct amdtp_stream *s,
+                            __be32 *buffer, unsigned int frames)
+{
+        unsigned int i, c;
+
+        for (i = 0; i < frames; ++i) {
+                for (c = 0; c < s->midi_channels; ++c)
+                        buffer[s->midi_positions[c]] = cpu_to_be32(0x40000000);
+                buffer += s->data_block_quadlets;
+        }
+}
+*/
 
 static void amdtp_fill_midi(struct amdtp_stream *s,
 			    __be32 *buffer, unsigned int frames)

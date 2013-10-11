@@ -21,8 +21,6 @@
 
 int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 {
-	struct cmp_connection *conn;
-	enum cmp_direction c_dir;
 	enum amdtp_stream_direction s_dir;
 	int max_bytes;
 	int err;
@@ -78,8 +76,6 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 */	
 
 	if (stream == &efw->tx_stream) {
-		conn = &efw->out_conn;
-		c_dir = CMP_OUTPUT;
 		s_dir = AMDTP_IN_STREAM;
         	err = fw_iso_resources_init(&efw->iso_tx, efw->unit);
         	if (err < 0) {
@@ -96,8 +92,6 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 		printk("RACK INIT DONE\n");
 
 	} else {
-		conn = &efw->in_conn;
-		c_dir = CMP_INPUT;
 		s_dir = AMDTP_OUT_STREAM;
         	err = fw_iso_resources_init(&efw->iso_rx, efw->unit);
         	if (err < 0) {
@@ -119,8 +113,8 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 err_resources:
 	if (err < 0) {
 		rack_shutdown(efw);
-		rack_shutdown(efw);
 		fw_iso_resources_free(&efw->iso_rx);
+		fw_iso_resources_free(&efw->iso_tx);
 		printk("ISO RESOURCES FAILED\n");
 		goto end;
 	}
@@ -132,7 +126,6 @@ end:
 static int snd_efw_stream_start(struct snd_efw *efw,
 				struct amdtp_stream *stream, int sampling_rate)
 {
-	struct cmp_connection *conn;
 	unsigned int pcm_channels, midi_channels;
 	int mode, err = 0;
 
@@ -143,30 +136,16 @@ static int snd_efw_stream_start(struct snd_efw *efw,
 	//mode = snd_efw_get_multiplier_mode(sampling_rate);
 	mode = 0;
 	if (stream == &efw->tx_stream) {
-		conn = &efw->out_conn;
 		pcm_channels = efw->pcm_capture_channels[mode];
 		midi_channels = DIV_ROUND_UP(efw->midi_output_ports, 8);
+		amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
+		err = amdtp_stream_start(stream, 0, SCODE_400);
 	} else {
-		conn = &efw->in_conn;
 		pcm_channels = efw->pcm_playback_channels[mode];
 		midi_channels = DIV_ROUND_UP(efw->midi_input_ports, 8);
+		amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
+		err = amdtp_stream_start(stream, 1, SCODE_400);
 	}
-
-	amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
-
-	/*  establish connection via CMP */
-//	err = cmp_connection_establish(conn,
-//				amdtp_stream_get_max_payload(stream));
-	err = 0;
-	if (err < 0)
-		goto end;
-
-	/* start amdtp stream */
-	err = amdtp_stream_start(stream,
-				 conn->resources.channel,
-				 conn->speed);
-//	if (err < 0)
-//		cmp_connection_break(conn);
 
 end:
 	return err;
@@ -180,10 +159,6 @@ static void snd_efw_stream_stop(struct snd_efw *efw,
 
 	amdtp_stream_stop(stream);
 
-//	if (stream == &efw->tx_stream)
-//		cmp_connection_break(&efw->out_conn);
-//	else
-//		cmp_connection_break(&efw->in_conn);
 end:
 	return;
 }
@@ -191,20 +166,20 @@ end:
 static void snd_efw_stream_update(struct snd_efw *efw,
 				  struct amdtp_stream *stream)
 {
-	struct cmp_connection *conn;
+	struct fw_iso_resources *iso;
 
 	if (&efw->tx_stream == stream)
-		conn = &efw->out_conn;
+		iso = &efw->iso_tx;
 	else
-		conn = &efw->in_conn;
+		iso = &efw->iso_rx;
 
-//	if (cmp_connection_update(conn) < 0) {
-//		amdtp_stream_pcm_abort(stream);
-//		mutex_lock(&efw->mutex);
-//		snd_efw_stream_stop(efw, stream);
-//		mutex_unlock(&efw->mutex);
-//		return;
-//	}
+	if (fw_iso_resources_update(iso) < 0) {
+		amdtp_stream_pcm_abort(stream);
+		mutex_lock(&efw->mutex);
+		snd_efw_stream_stop(efw, stream);
+		mutex_unlock(&efw->mutex);
+		return;
+	}
 	amdtp_stream_update(stream);
 }
 
@@ -233,7 +208,7 @@ static int get_roles(struct snd_efw *efw,
 	//err = snd_efw_command_get_clock_source(efw, &clock_source);
 	//if (err < 0)
 	//	goto end;
-	clock_source = SND_EFW_CLOCK_SOURCE_SYTMATCH;
+	clock_source = SND_EFW_CLOCK_SOURCE_SYTMATCH+1;
 
 	if (clock_source != SND_EFW_CLOCK_SOURCE_SYTMATCH) {
 		*master = &efw->tx_stream;

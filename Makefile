@@ -1,5 +1,5 @@
 snd-firewire-lib-objs := lib.o iso-resources.o packets-buffer.o \
-			 fcp.o nullcmp.o amdtp.o 003/digimagic.o
+			 fcp.o amdtp.o 003/digimagic.o
 #snd-firewire-speakers-objs := speakers.o
 #snd-isight-objs := isight.o
 #snd-scs1x-objs := scs1x.o

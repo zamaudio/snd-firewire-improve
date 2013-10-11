@@ -148,9 +148,9 @@ int rack_init(struct snd_efw *digi)
 
 	write_quadlet(digi, 0xffffe0000124ULL, 0x00000001); // stop control
 
-#if 0
-	//write_quadlet(digi, 0xffffe0000124ULL, 0x00000000); // start control
+	write_quadlet(digi, 0xffffe0000124ULL, 0x00000000); // start control
 	/* No monitoring of inputs */
+#if 0
 
 	write_quadlet(digi, R003_MIX_ANALOG_1L, R003_MIX_NONE);
 	write_quadlet(digi, R003_MIX_ANALOG_1R, R003_MIX_NONE);

@@ -47,7 +47,6 @@
 #include "../packets-buffer.h"
 #include "../iso-resources.h"
 #include "../amdtp.h"
-#include "../nullcmp.h"
 #include "../fcp.h"
 #include "../lib.h"
 
@@ -123,9 +122,6 @@ struct snd_efw {
 	/* for IEC 61883-1 and -6 streaming */
 	struct amdtp_stream tx_stream;
 	struct amdtp_stream rx_stream;
-	/* Fireworks has only two plugs */
-	struct cmp_connection out_conn;
-	struct cmp_connection in_conn;
 
 	/* Digidesign 003 needs hardcoded iso stream numbers */
 	struct fw_iso_resources iso_rx;
