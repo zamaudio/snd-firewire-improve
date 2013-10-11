@@ -95,6 +95,4 @@ int rack_init(struct snd_efw *digi);
 
 void rack_shutdown(struct snd_efw *digi);
 
-void digi_free_resources(struct snd_efw *digi, struct amdtp_stream *stream);
-
 int digi_allocate_resources(struct snd_efw *digi, enum amdtp_stream_direction direction);

@@ -126,6 +126,10 @@ struct snd_efw {
 	/* Fireworks has only two plugs */
 	struct cmp_connection out_conn;
 	struct cmp_connection in_conn;
+
+	/* Digidesign 003 needs hardcoded iso stream numbers */
+	struct fw_iso_resources iso_rx;
+	struct fw_iso_resources iso_tx;
 };
 
 struct snd_efw_hwinfo {

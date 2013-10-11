@@ -211,35 +211,8 @@ void rack_shutdown(struct snd_efw *digi)
 	poll_until(digi, 0xffffe0000000ULL, 0x00000003);
 }
 
-void digi_free_resources(struct snd_efw *digi, struct amdtp_stream *stream)
-{
-	rack_shutdown(digi);
-	//fw_iso_resources_free(&stream->conn);
-}
-
 int digi_allocate_resources(struct snd_efw *digi, enum amdtp_stream_direction direction)
 {
-	//int err;
-/*
-	if (direction == AMDTP_STREAM_RECEIVE) {
-		if (digi->receive_stream.conn.allocated)
-			return 0;
-
-		err = fw_iso_resources_allocate(&(digi->receive_stream.conn),
-			amdtp_stream_get_max_payload(&(digi->receive_stream.strm)),
-			fw_parent_device(digi->unit)->max_speed);
-	} else {
-		if (digi->transmit_stream.conn.allocated)
-                        return 0;
-
-                err = fw_iso_resources_allocate(&(digi->transmit_stream.conn),
-                        amdtp_stream_get_max_payload(&(digi->transmit_stream.strm)),                       
-                        fw_parent_device(digi->unit)->max_speed);
-	}
-
-	if (err < 0)
-		return err;
-*/	
 	printk("ALLOCATE FAKE ISO SUCCEEDED\n");
 	return 0;
 }

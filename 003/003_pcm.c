@@ -186,12 +186,8 @@ static int pcm_open(struct snd_pcm_substream *substream)
 	substream->runtime->hw.rate_min = 48000;
 	substream->runtime->hw.rate_max = 48000;
 
-	printk("PRE RACK_INIT\n");
-	rack_init(efw);
-	printk("DONE RACK_INIT\n");
-
-	snd_pcm_set_sync(substream);
-	printk("DONE SET_SYNC\n");
+//	snd_pcm_set_sync(substream);
+//	printk("DONE SET_SYNC\n");
 	
 	return 0;
 

@@ -24,19 +24,17 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 	struct cmp_connection *conn;
 	enum cmp_direction c_dir;
 	enum amdtp_stream_direction s_dir;
+	int max_bytes;
 	int err;
+	efw->iso_rx.channel = 1;
+	efw->iso_rx.bandwidth = 19*16;
+	efw->iso_rx.bandwidth_overhead = 8;
 
-	if (stream == &efw->tx_stream) {
-		conn = &efw->out_conn;
-		c_dir = CMP_OUTPUT;
-		s_dir = AMDTP_IN_STREAM;
-//		mask = 0x0000000000000002uLL;
-	} else {
-		conn = &efw->in_conn;
-		c_dir = CMP_INPUT;
-		s_dir = AMDTP_OUT_STREAM;
-//		mask = 0x0000000000000001uLL;
-	}
+	efw->iso_tx.channel = 0;
+	efw->iso_tx.bandwidth = 19*16;
+	efw->iso_tx.bandwidth_overhead = 8;
+	
+	max_bytes = efw->iso_rx.bandwidth + efw->iso_rx.bandwidth_overhead;
 /*
         efw->rx_stream.strm.midi_quadlets[0] = 0;
         efw->rx_stream.strm.pcm_quadlets[0] = 1;
@@ -77,25 +75,53 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
         efw->tx_stream.strm.pcm_quadlets[15] = 16;
         efw->tx_stream.strm.pcm_quadlets[16] = 17;
         efw->tx_stream.strm.pcm_quadlets[17] = 18;
+*/	
+
+	if (stream == &efw->tx_stream) {
+		conn = &efw->out_conn;
+		c_dir = CMP_OUTPUT;
+		s_dir = AMDTP_IN_STREAM;
+        	err = fw_iso_resources_init(&efw->iso_tx, efw->unit);
+        	if (err < 0) {
+			fw_iso_resources_free(&efw->iso_tx);
+			goto err_resources;
+		}
+		efw->iso_tx.channels_mask = 0x0000000000000001uLL;
+		printk("ISO RESOURCES INIT TX DONE\n");
+
+		fw_iso_resources_allocate(&efw->iso_tx, max_bytes, SCODE_400);
+		printk("ALLOCATED ISO RESOURCES TX\n");
+
+		rack_init(efw);
+		printk("RACK INIT DONE\n");
+
+	} else {
+		conn = &efw->in_conn;
+		c_dir = CMP_INPUT;
+		s_dir = AMDTP_OUT_STREAM;
+        	err = fw_iso_resources_init(&efw->iso_rx, efw->unit);
+        	if (err < 0) {
+			fw_iso_resources_free(&efw->iso_rx);
+			goto err_resources;
+		}
+		efw->iso_rx.channels_mask = 0x0000000000000002uLL;
+		printk("ISO RESOURCES INIT RX DONE\n");
+
+		fw_iso_resources_allocate(&efw->iso_rx, max_bytes, SCODE_400);
+		printk("ALLOCATED ISO RESOURCES RX\n");
+	}
 	
-        err = fw_iso_resources_init(stream, efw->unit);
-        if (err < 0)
-		goto err_resources;
-        err = fw_iso_resources_init(stream, efw->unit);
-        if (err < 0)
-		goto err_resources;
-*/
-//	stream->conn.channels_mask = mask;
-
-//	err = cmp_connection_init(conn, efw->unit, c_dir, 0);
-//	if (err < 0)
-//		goto end;
-
 	err = amdtp_stream_init(stream, efw->unit, s_dir, CIP_NONBLOCKING);
+	printk("AMDTP INIT DONE\n");
+
+	return 0;
+
+err_resources:
 	if (err < 0) {
 		rack_shutdown(efw);
-//		cmp_connection_destroy(conn);
-		//digi_free_resources(efw, stream);
+		rack_shutdown(efw);
+		fw_iso_resources_free(&efw->iso_rx);
+		printk("ISO RESOURCES FAILED\n");
 		goto end;
 	}
 
@@ -186,15 +212,14 @@ static void snd_efw_stream_destroy(struct snd_efw *efw,
 				   struct amdtp_stream *stream)
 {
 	snd_efw_stream_stop(efw, stream);
-	rack_shutdown(efw);
 
-// 	digi_free_resources(efw, stream);
 
-//	if (stream == &efw->tx_stream)
-//		cmp_connection_destroy(&efw->out_conn);
-//	else
-//		cmp_connection_destroy(&efw->in_conn);
-//
+	if (stream == &efw->tx_stream) {
+		rack_shutdown(efw);
+ 		fw_iso_resources_free(&efw->iso_tx);
+	} else
+ 		fw_iso_resources_free(&efw->iso_rx);
+
 	return;
 }
 
@@ -227,11 +252,11 @@ int snd_efw_stream_init_duplex(struct snd_efw *efw)
 {
 	int err;
 
-	err = snd_efw_stream_init(efw, &efw->tx_stream);
+	err = snd_efw_stream_init(efw, &efw->rx_stream);
 	if (err < 0)
 		goto end;
 
-	err = snd_efw_stream_init(efw, &efw->rx_stream);
+	err = snd_efw_stream_init(efw, &efw->tx_stream);
 end:
 	return err;
 }
