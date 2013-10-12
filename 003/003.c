@@ -60,6 +60,10 @@ get_hardware_info(struct snd_efw *efw)
 	efw->pcm_playback_channels[0] = 18;
 	efw->pcm_playback_channels[1] = 18;
 	efw->pcm_playback_channels[2] = 18;
+	
+	efw->midi_input_ports = 1;
+	efw->midi_output_ports = 0;// change this to 2 causes dropouts but fixes quadlets and sound
+
 
 	/* set names */
 	strcpy(efw->card->driver, "003 Rack");
@@ -71,7 +75,7 @@ get_hardware_info(struct snd_efw *efw)
 	strcpy(efw->card->mixername, "003 Rack");
 
 	/* set flag for supported clock source */
-	efw->supported_clock_source = 0;
+	efw->supported_clock_source = SND_EFW_CLOCK_SOURCE_SYTMATCH;
 	
 	efw->supported_sampling_rate = SNDRV_PCM_RATE_48000;
 	

@@ -19,20 +19,54 @@
 #include "003_lowlevel.h"
 #include "003.h"
 
+static unsigned int packet_bandwidth(unsigned int max_payload_bytes, int speed)
+{
+        unsigned int bytes, s400_bytes;
+
+        /* iso packets have three header quadlets and quadlet-aligned payload */
+        bytes = 3 * 4 + ALIGN(max_payload_bytes, 4);
+
+        /* convert to bandwidth units (quadlets at S1600 = bytes at S400) */
+        if (speed <= SCODE_400)
+                s400_bytes = bytes * (1 << (SCODE_400 - speed));
+        else
+                s400_bytes = DIV_ROUND_UP(bytes, 1 << (speed - SCODE_400));
+
+        return s400_bytes;
+}
+
+static int current_bandwidth_overhead(struct fw_card *card)
+{
+        /*
+         * Under the usual pessimistic assumption (cable length 4.5 m), the
+         * isochronous overhead for N cables is 1.797 µs + N * 0.494 µs, or
+         * 88.3 + N * 24.3 in bandwidth units.
+         *
+         * The calculation below tries to deduce N from the current gap count.
+         * If the gap count has been optimized by measuring the actual packet
+         * transmission time, this derived overhead should be near the actual
+         * overhead as well.
+         */
+        return card->gap_count < 63 ? card->gap_count * 97 / 10 + 89 : 512;
+}
+
 int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 {
+	struct fw_card *card = fw_parent_device(efw->unit)->card;
 	enum amdtp_stream_direction s_dir;
-	int max_bytes;
+	int max_bytes_rx;
+	int max_bytes_tx;
 	int err;
 	efw->iso_rx.channel = 1;
-	efw->iso_rx.bandwidth = 19*8*4;
-	efw->iso_rx.bandwidth_overhead = 2*4;
+	efw->iso_rx.bandwidth = packet_bandwidth(464, SCODE_400); //540
+	efw->iso_rx.bandwidth_overhead = current_bandwidth_overhead(card);
 
 	efw->iso_tx.channel = 0;
-	efw->iso_tx.bandwidth = 19*8*4;
-	efw->iso_tx.bandwidth_overhead = 2*4;
+	efw->iso_tx.bandwidth = packet_bandwidth(540, SCODE_400);
+	efw->iso_tx.bandwidth_overhead = current_bandwidth_overhead(card);
 	
-	max_bytes = efw->iso_rx.bandwidth + efw->iso_rx.bandwidth_overhead;
+	max_bytes_rx = efw->iso_rx.bandwidth + efw->iso_rx.bandwidth_overhead;
+	max_bytes_tx = efw->iso_tx.bandwidth + efw->iso_tx.bandwidth_overhead;
 
 	if (stream == &efw->tx_stream) {
 		s_dir = AMDTP_IN_STREAM;
@@ -44,7 +78,7 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 		efw->iso_tx.channels_mask = 0x0000000000000001uLL;
 		printk("ISO RESOURCES INIT TX DONE\n");
 
-		fw_iso_resources_allocate(&efw->iso_tx, max_bytes, SCODE_400);
+		fw_iso_resources_allocate(&efw->iso_tx, max_bytes_tx, SCODE_400);
 		printk("ALLOCATED ISO RESOURCES TX\n");
 
 		rack_init(efw);
@@ -60,7 +94,7 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 		efw->iso_rx.channels_mask = 0x0000000000000002uLL;
 		printk("ISO RESOURCES INIT RX DONE\n");
 
-		fw_iso_resources_allocate(&efw->iso_rx, max_bytes, SCODE_400);
+		fw_iso_resources_allocate(&efw->iso_rx, max_bytes_rx, SCODE_400);
 		printk("ALLOCATED ISO RESOURCES RX\n");
 	}
 	

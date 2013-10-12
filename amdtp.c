@@ -269,15 +269,18 @@ static unsigned int calculate_data_blocks(struct amdtp_stream *s)
 	else if (!cip_sfc_is_base_44100(s->sfc)) {
 		/* Sample_rate / 8000 is an integer, and precomputed. */
 		//data_blocks = s->data_block_state;
-		phase = s->data_block_state;
-		if (phase >= 16)
-			phase = 0;
-
-		data_blocks = ((phase % 16) > 7) ? 5 : 7;
-		if (++phase >= 16)
-			phase = 0;
-		s->data_block_state = phase;
-
+		if (s->direction == AMDTP_IN_STREAM) { //capture
+			data_blocks = 6;
+		} else {
+			phase = s->data_block_state;
+			if (phase >= 16)
+				phase = 0;
+	
+			data_blocks = ((phase % 16) > 7) ? 5 : 7;
+			if (++phase >= 16)
+				phase = 0;
+			s->data_block_state = phase;
+		}
 	} else {
 		phase = s->data_block_state;
 
@@ -387,7 +390,7 @@ static void packet_sort(struct sort_table *tbl, unsigned int len)
 	} while (i < len);
 }
 
-static void amdtp_write_s32_org(struct amdtp_stream *s,
+static void amdtp_write_s32(struct amdtp_stream *s,
 			    struct snd_pcm_substream *pcm,
 			    __be32 *buffer, unsigned int frames)
 {
@@ -412,7 +415,7 @@ static void amdtp_write_s32_org(struct amdtp_stream *s,
 }
 
 
-static void amdtp_write_s32(struct amdtp_stream *s,
+static void amdtp_write_s32_magic(struct amdtp_stream *s,
 			    struct snd_pcm_substream *pcm,
 			    __be32 *buffer, unsigned int frames)
 {
@@ -567,8 +570,7 @@ static void amdtp_fill_midi(struct amdtp_stream *s,
 			if ((f < s->blocks_for_midi) &&
 			    (s->midi[port] != NULL) &&
 			    test_bit(port, &s->midi_triggered)) {
-				len = snd_rawmidi_transmit(s->midi[port],
-								b + 1, 1);
+				len = snd_rawmidi_transmit(s->midi[port], b + 1, 1);
 				if (len <= 0)
 					b[1] = 0x00;
 				else
