@@ -45,7 +45,6 @@ get_hardware_info(struct snd_efw *efw)
 	if (hwinfo == NULL)
 		return -ENOMEM;
 
-
 	/* capabilities */
 		efw->dynaddr_support = 0;
 		efw->mirroring_support = 0;
@@ -62,8 +61,7 @@ get_hardware_info(struct snd_efw *efw)
 	efw->pcm_playback_channels[2] = 18;
 	
 	efw->midi_input_ports = 1;
-	efw->midi_output_ports = 0;// change this to 2 causes dropouts but fixes quadlets and sound
-
+	efw->midi_output_ports = 2;
 
 	/* set names */
 	strcpy(efw->card->driver, "003 Rack");

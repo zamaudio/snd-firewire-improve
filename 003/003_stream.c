@@ -58,15 +58,17 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 	int max_bytes_tx;
 	int err;
 	efw->iso_rx.channel = 1;
-	efw->iso_rx.bandwidth = packet_bandwidth(464, SCODE_400); //540
+	efw->iso_rx.bandwidth = packet_bandwidth((19*24+8)*4, SCODE_400); //464
 	efw->iso_rx.bandwidth_overhead = current_bandwidth_overhead(card);
 
 	efw->iso_tx.channel = 0;
-	efw->iso_tx.bandwidth = packet_bandwidth(540, SCODE_400);
+	efw->iso_tx.bandwidth = packet_bandwidth((19*24+8)*4, SCODE_400); //540
 	efw->iso_tx.bandwidth_overhead = current_bandwidth_overhead(card);
 	
 	max_bytes_rx = efw->iso_rx.bandwidth + efw->iso_rx.bandwidth_overhead;
 	max_bytes_tx = efw->iso_tx.bandwidth + efw->iso_tx.bandwidth_overhead;
+	printk("bytes_rx %d\n", max_bytes_rx);
+	printk("bytes_tx %d\n", max_bytes_tx);
 
 	if (stream == &efw->tx_stream) {
 		s_dir = AMDTP_IN_STREAM;

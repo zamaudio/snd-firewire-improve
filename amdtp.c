@@ -162,7 +162,7 @@ void amdtp_stream_set_params(struct amdtp_stream *s,
 		return;
 
 	for (sfc = 0; sfc < sizeof(rates); ++sfc)
-		if (rates[sfc] == rate)
+		if (rates[sfc] == 48000)
 			goto sfc_found;
 	WARN_ON(1);
 	return;
@@ -171,7 +171,7 @@ sfc_found:
 	s->sfc = sfc;
 	s->pcm_channels = pcm_channels;
 	s->midi_channels = midi_channels;
-	s->data_block_quadlets = pcm_channels + midi_channels;
+	s->data_block_quadlets = pcm_channels + 1; //midi_channels;
 
 	/* default buffering in the device */
 	s->transfer_delay = TRANSFER_DELAY_TICKS - TICKS_PER_CYCLE;
@@ -184,7 +184,7 @@ sfc_found:
 	for (i = 0; i < midi_channels; i++)
 		s->midi_positions[i] = i;
 	for (i = 0; i < pcm_channels; i++)
-		s->pcm_positions[i] = i + midi_channels;
+		s->pcm_positions[i] = i + 1; //midi_channels;
 }
 EXPORT_SYMBOL(amdtp_stream_set_params);
 
@@ -700,7 +700,7 @@ static void handle_out_packet(struct amdtp_stream *s, unsigned int syt)
 	fdf = s->sfc << AMDTP_FDF_SFC_SHIFT;
 
 	buffer = s->buffer.packets[s->packet_index].buffer;
-	buffer[0] = cpu_to_be32(ACCESS_ONCE(s->source_node_id_field) |
+	buffer[0] = cpu_to_be32(0 /*ACCESS_ONCE(s->source_node_id_field) */ |
 				(s->data_block_quadlets << AMDTP_DBS_SHIFT) |
 				s->data_block_counter);
 	buffer[1] = cpu_to_be32(CIP_EOH | CIP_FMT_AM | AMDTP_FDF_AM824 |
@@ -1013,7 +1013,7 @@ int amdtp_stream_start(struct amdtp_stream *s, int channel, int speed)
 	 * NODATA packets with tag 0.
 	 */
 	err = fw_iso_context_start(s->context, -1, 0,
-			FW_ISO_CONTEXT_MATCH_TAG0 | FW_ISO_CONTEXT_MATCH_TAG1);
+			FW_ISO_CONTEXT_MATCH_TAG1 | FW_ISO_CONTEXT_MATCH_TAG0);
 	if (err < 0)
 		goto err_context;
 

@@ -50,7 +50,7 @@ enum cip_sfc {
  * Then AMDTP packets include maximum 16 MIDI streams multiplexed.
  * This is for our convinience.
  */
-#define AMDTP_MAX_CHANNELS_FOR_MIDI	1
+#define AMDTP_MAX_CHANNELS_FOR_MIDI	2
 
 struct fw_unit;
 struct fw_iso_context;
