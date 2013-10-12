@@ -48,7 +48,7 @@
 #define DBC_THREADSHOULD	(AMDTP_DBC_MASK / 2)
 
 /* TODO: make these configurable */
-#define INTERRUPT_INTERVAL	8
+#define INTERRUPT_INTERVAL	16
 #define QUEUE_LENGTH		96
 #define STREAM_TIMEOUT_MS	100
 
@@ -102,14 +102,14 @@ int amdtp_stream_init(struct amdtp_stream *s, struct fw_unit *unit,
 	s->packet_index = 0;
 
 	s->pcm = NULL;
-	s->blocks_for_midi = 1;//UINT_MAX;
+	s->blocks_for_midi = UINT_MAX;
 
 	init_waitqueue_head(&s->run_wait);
 	s->run = false;
 	s->sync_slave = ERR_PTR(-1);
 
 	s->sort_table = NULL;
-	s->left_packets = 1; //NULL;
+	s->left_packets = NULL;
 
 	return 0;
 }
@@ -767,7 +767,7 @@ static void handle_in_packet(struct amdtp_stream *s,
 	 * "8" at any sampling rates but actually it's different at
 	 * 96.0/88.2 kHz.
 	 */
-	data_blocks = 6;
+	data_blocks = (payload_quadlets - 2) / s->data_block_quadlets;
 
 	buffer += 2;
 

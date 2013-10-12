@@ -160,7 +160,11 @@ static int snd_efw_probe(struct fw_unit *unit,
 		goto error;
 
 	/* create midi interface */
-	err = snd_efw_create_midi_devices(efw);
+	if (efw->midi_output_ports || efw->midi_input_ports) {
+		err = snd_efw_create_midi_devices(efw);
+		if (err < 0)
+			goto error;
+	}
 	if (err < 0)
 		goto error;
 

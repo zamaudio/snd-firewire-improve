@@ -95,14 +95,14 @@ static int snd_efw_stream_start(struct snd_efw *efw,
 	//mode = snd_efw_get_multiplier_mode(sampling_rate);
 	mode = 0;
 	if (stream == &efw->tx_stream) {
-		pcm_channels = 18;
-		midi_channels = 1;
-		amdtp_stream_set_params(stream, sampling_rate, 18, 1);
+		pcm_channels = efw->pcm_capture_channels[mode];
+		midi_channels = DIV_ROUND_UP(efw->midi_output_ports, 8);
+		amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
 		err = amdtp_stream_start(stream, 0, SCODE_400);
 	} else {
-		pcm_channels = 18;
-		midi_channels = 1;
-		amdtp_stream_set_params(stream, sampling_rate, 18, 1);
+		pcm_channels = efw->pcm_capture_channels[mode];
+		midi_channels = DIV_ROUND_UP(efw->midi_output_ports, 8);
+		amdtp_stream_set_params(stream, sampling_rate, pcm_channels, midi_channels);
 		err = amdtp_stream_start(stream, 1, SCODE_400);
 	}
 
