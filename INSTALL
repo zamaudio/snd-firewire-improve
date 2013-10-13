@@ -1,0 +1,13 @@
+003 Rack ALSA driver by Damien Zammit (2013)
+
+You need kernel > 3.11
+
+Install instructions:
+
+	sudo dkms add -m snd-003 -v 3.11
+	sudo dkms build -m snd-003 -v 3.11
+	sudo dkms install -m snd-003 -v 3.11
+
+Removal:
+
+	sudo dkms remove -m snd-003 -v 3.11 --all
