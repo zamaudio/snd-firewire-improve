@@ -83,8 +83,8 @@ int snd_efw_stream_init(struct snd_efw *efw, struct amdtp_stream *stream)
 		fw_iso_resources_allocate(&efw->iso_tx, max_bytes_tx, SCODE_400);
 		printk("ALLOCATED ISO RESOURCES TX\n");
 
-		rack_init(efw);
-		printk("RACK INIT DONE\n");
+		//rack_init(efw);
+		//printk("RACK INIT DONE\n");
 
 	} else {
 		s_dir = AMDTP_OUT_STREAM;
@@ -240,6 +240,9 @@ int snd_efw_stream_start_duplex(struct snd_efw *efw,
 	int err, curr_rate;
 	bool slave_flag;
 
+	rack_init(efw);
+	printk("RACK START\n");
+
 	err = get_roles(efw, &sync_mode, &master, &slave);
 	if (err < 0)
 		return err;
@@ -335,6 +338,8 @@ void snd_efw_stream_update_duplex(struct snd_efw *efw)
 		master = &efw->rx_stream;
 		slave = &efw->tx_stream;
 	}
+	rack_init(efw);
+	printk("RACK UPDATE\n");
 
 	snd_efw_stream_update(efw, master);
 	snd_efw_stream_update(efw, slave);

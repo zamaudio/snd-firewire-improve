@@ -95,6 +95,7 @@ static int pcm_open(struct snd_pcm_substream *substream)
 	int err;
 
 	printk("START PCM_OPEN\n");
+
 	/* common hardware information */
 	err = pcm_init_hw_params(efw, substream);
 	if (err < 0)
@@ -144,6 +145,9 @@ static int pcm_capture_prepare(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	int err;
 
+	//rack_init(efw);
+	//printk("RACK INIT DONE\n");
+	
 	err = snd_efw_stream_start_duplex(efw, &efw->tx_stream, runtime->rate);
 	if (err < 0)
 		goto end;
@@ -158,6 +162,9 @@ static int pcm_playback_prepare(struct snd_pcm_substream *substream)
 	struct snd_efw *efw = substream->private_data;
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	int err;
+
+	//rack_init(efw);
+	//printk("RACK INIT DONE\n");
 
 	err = snd_efw_stream_start_duplex(efw, &efw->rx_stream, runtime->rate);
 	if (err < 0)

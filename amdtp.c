@@ -700,7 +700,7 @@ static void handle_out_packet(struct amdtp_stream *s, unsigned int syt)
 	fdf = s->sfc << AMDTP_FDF_SFC_SHIFT;
 
 	buffer = s->buffer.packets[s->packet_index].buffer;
-	buffer[0] = cpu_to_be32(0 /*ACCESS_ONCE(s->source_node_id_field) */ |
+	buffer[0] = cpu_to_be32(ACCESS_ONCE(s->source_node_id_field) | // 0
 				(s->data_block_quadlets << AMDTP_DBS_SHIFT) |
 				s->data_block_counter);
 	buffer[1] = cpu_to_be32(CIP_EOH | CIP_FMT_AM | AMDTP_FDF_AM824 |
