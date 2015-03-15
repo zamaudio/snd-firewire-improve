@@ -82,6 +82,12 @@ enum snd_dg00x_clock {
 	SND_DG00X_CLOCK_WORD,
 };
 
+/* values for SND_DG00X_ADDR_OFFSET_OPTICAL_MODE */
+enum snd_dg00x_optical_mode {
+	SND_DG00X_OPTICAL_MODE_ADAT = 0,
+	SND_DG00X_OPTICAL_MODE_SPDIF,
+};
+
 void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
 				  struct snd_pcm_substream *pcm,
 				  __be32 *buffer, unsigned int frames);
@@ -102,6 +108,8 @@ int snd_dg00x_stream_get_rate(struct snd_dg00x *dg00x, unsigned int *rate);
 int snd_dg00x_stream_set_rate(struct snd_dg00x *dg00x, unsigned int rate);
 int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 			       enum snd_dg00x_clock *clock);
+int snd_dg00x_stream_get_optical_mode(struct snd_dg00x *dg00x,
+				      enum snd_dg00x_optical_mode *mode);
 int snd_dg00x_stream_init_duplex(struct snd_dg00x *dg00x);
 int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate);
 void snd_dg00x_stream_stop_duplex(struct snd_dg00x *dg00x);
@@ -111,6 +119,8 @@ void snd_dg00x_stream_destroy_duplex(struct snd_dg00x *dg00x);
 void snd_dg00x_stream_lock_changed(struct snd_dg00x *dg00x);
 int snd_dg00x_stream_lock_try(struct snd_dg00x *dg00x);
 void snd_dg00x_stream_lock_release(struct snd_dg00x *dg00x);
+
+void snd_dg00x_proc_init(struct snd_dg00x *dg00x);
 
 int snd_dg00x_create_pcm_devices(struct snd_dg00x *dg00x);
 

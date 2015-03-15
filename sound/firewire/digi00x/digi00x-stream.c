@@ -84,6 +84,20 @@ int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 	return err;
 }
 
+int snd_dg00x_stream_get_optical_mode(struct snd_dg00x *dg00x,
+				      enum snd_dg00x_optical_mode *mode)
+{
+	__be32 data;
+	int err;
+
+	err = snd_fw_transaction(dg00x->unit, TCODE_READ_QUADLET_REQUEST,
+				 0xffffe000011c, &data, sizeof(data), 0);
+	if (err >= 0)
+		*mode = be32_to_cpu(data) & 0x01;
+
+	return err;
+}
+
 static void finish_session(struct snd_dg00x *dg00x)
 {
 	__be32 data = cpu_to_be32(0x00000003);

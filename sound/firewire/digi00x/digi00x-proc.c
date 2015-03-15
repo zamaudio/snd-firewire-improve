@@ -1,0 +1,71 @@
+/*
+ * digi00x-proc.c - a part of driver for Digidesign Digi 002/003 family
+ *
+ * Copyright (c) 2014-2015 Takashi Sakamoto
+ *
+ * Licensed under the terms of the GNU General Public License, version 2.
+ */
+
+#include "./digi00x.h"
+
+static void proc_read_clock(struct snd_info_entry *entry,
+			    struct snd_info_buffer *buf)
+{
+	static const char *const source_name[] = {
+		[SND_DG00X_CLOCK_INTERNAL] = "internal",
+		[SND_DG00X_CLOCK_SPDIF] = "s/pdif",
+		[SND_DG00X_CLOCK_ADAT] = "adat",
+		[SND_DG00X_CLOCK_WORD] = "word clock",
+	};
+	static const char *const optical_name[] = {
+		[SND_DG00X_OPTICAL_MODE_ADAT] = "adat",
+		[SND_DG00X_OPTICAL_MODE_SPDIF] = "s/pdif",
+	};
+        struct snd_dg00x *dg00x = entry->private_data;
+	unsigned int rate;
+	enum snd_dg00x_clock clock;
+	enum snd_dg00x_optical_mode mode;
+
+	if (snd_dg00x_stream_get_rate(dg00x, &rate) < 0)
+		return;
+	if (snd_dg00x_stream_get_clock(dg00x, &clock) < 0)
+		return;
+	if (snd_dg00x_stream_get_optical_mode(dg00x, &mode) < 0)
+		return;
+
+	snd_iprintf(buf, "Sampling Rate: %d\n", rate);
+	snd_iprintf(buf, "Clock Source: %s\n", source_name[clock]);
+	snd_iprintf(buf, "Optical mode: %s\n", optical_name[mode]);
+}
+
+void snd_dg00x_proc_init(struct snd_dg00x *dg00x)
+{
+	struct snd_info_entry *root, *entry;
+
+	/*
+	 * All nodes are automatically removed at snd_card_disconnect(),
+	 * by following to link list.
+	 */
+	root = snd_info_create_card_entry(dg00x->card, "firewire",
+					  dg00x->card->proc_root);
+	if (root == NULL)
+		return;
+
+	root->mode = S_IFDIR | S_IRUGO | S_IXUGO;
+	if (snd_info_register(root) < 0) {
+		snd_info_free_entry(root);
+		return;
+	}
+
+	entry = snd_info_create_card_entry(dg00x->card, "clock", root);
+	if (entry == NULL) {
+		snd_info_free_entry(root);
+		return;
+	}
+
+	snd_info_set_text_ops(entry, dg00x, proc_read_clock);
+	if (snd_info_register(entry) < 0) {
+		snd_info_free_entry(entry);
+		snd_info_free_entry(root);
+	}
+}
