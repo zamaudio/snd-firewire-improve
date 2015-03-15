@@ -15,68 +15,6 @@ MODULE_LICENSE("GPL v2");
 #define VENDOR_DIGIDESIGN	0x00a07e
 #define MODEL_DIGI00X		0x000002
 
-static void handle_message(struct fw_card *card, struct fw_request *request,
-			   int tcode, int destination, int source,
-			   int generation, unsigned long long offset,
-			   void *data, size_t length, void *callback_data)
-{
-	int rcode;
-	u32 *buf = (__be32 *)data;
-
-	rcode = RCODE_COMPLETE;
-
-	snd_printk(KERN_INFO"%08llx: %08x\n", offset, be32_to_cpu(*buf));
-
-	fw_send_response(card, request, rcode);
-}
-
-static void snd_dg00x_message_unregister(struct snd_dg00x *dg00x)
-{
-	if (dg00x->message_handler.offset)
-		fw_core_remove_address_handler(&dg00x->message_handler);
-	dg00x->message_handler.offset = 0;
-}
-
-static int snd_dg00x_message_register(struct snd_dg00x *dg00x)
-{
-	static const struct fw_address_region resp_register_region = {
-		.start	= 0xffff00000000ull,
-		.end	= 0xffff0000ffffull,
-	};
-	struct fw_device *device = fw_parent_device(dg00x->unit);
-	__be32 data[2];
-	int err;
-
-	dg00x->message_handler.length = 8;
-	dg00x->message_handler.address_callback = handle_message;
-	dg00x->message_handler.callback_data = (void *)dg00x;
-
-	err = fw_core_add_address_handler(&dg00x->message_handler,
-					  &resp_register_region);
-	if (err < 0)
-		goto end;
-
-	/* Unknown. */
-	data[0] = cpu_to_be32((device->card->node_id << 16) |
-			      (dg00x->message_handler.offset >> 32));
-	data[1] = cpu_to_be32(dg00x->message_handler.offset);
-	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
-				 0xffffe0000008ull, &data, sizeof(data), 0);
-	if (err < 0)
-		goto end;
-
-	/* For 0x7051/0x7058 message. Unknown. */
-	data[0] = cpu_to_be32((device->card->node_id << 16) |
-			      (dg00x->message_handler.offset >> 32));
-	data[1] = cpu_to_be32(dg00x->message_handler.offset + 4);
-	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
-				 0xffffe0000014ull, &data, sizeof(data), 0);
-end:
-	if (err < 0)
-		snd_dg00x_message_unregister(dg00x);
-	return err;
-}
-
 static int name_card(struct snd_dg00x *dg00x)
 {
 	struct fw_device *fw_dev = fw_parent_device(dg00x->unit);
@@ -110,7 +48,7 @@ static void dg00x_card_free(struct snd_card *card)
 	struct snd_dg00x *dg00x = card->private_data;
 
 	snd_dg00x_stream_destroy_duplex(dg00x);
-	snd_dg00x_message_unregister(dg00x);
+	snd_dg00x_protocol_remove_instance(dg00x);
 
 	fw_unit_put(dg00x->unit);
 
@@ -144,7 +82,7 @@ static int snd_dg00x_probe(struct fw_unit *unit,
 	if (err < 0)
 		goto error;
 
-	err = snd_dg00x_message_register(dg00x);
+	err = snd_dg00x_protocol_add_instance(dg00x);
 	if (err < 0)
 		goto error;
 
@@ -220,11 +158,18 @@ static struct fw_driver dg00x_driver = {
 
 static int __init snd_dg00x_init(void)
 {
+	int err;
+
+	err = snd_dg00x_protocol_register();
+	if (err < 0)
+		return err;
+
 	return driver_register(&dg00x_driver.driver);
 }
 
 static void __exit snd_dg00x_exit(void)
 {
+	snd_dg00x_protocol_unregister();
 	driver_unregister(&dg00x_driver.driver);
 }
 

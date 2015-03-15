@@ -58,6 +58,11 @@ struct snd_dg00x {
 	int dev_lock_count;
 	bool dev_lock_changed;
 	wait_queue_head_t hwdep_wait;
+
+	/* For asynchronous MIDI controls. */
+	struct work_struct midi_control;
+	struct snd_rawmidi_substream *in_control;
+	struct snd_rawmidi_substream *out_control;
 };
 
 /* values for SND_DG00X_ADDR_OFFSET_RATE */
@@ -77,6 +82,19 @@ enum snd_dg00x_clock {
 	SND_DG00X_CLOCK_WORD,
 };
 
+void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
+				  struct snd_pcm_substream *pcm,
+				  __be32 *buffer, unsigned int frames);
+void snd_dg00x_protocol_fill_midi(struct amdtp_stream *s,
+				  __be32 *buffer, unsigned int frames);
+void snd_dg00x_protocol_pull_midi(struct amdtp_stream *s,
+				  __be32 *buffer, unsigned int frames);
+void snd_dg00x_protocol_queue_midi_message(struct snd_dg00x *dg00x);
+int snd_dg00x_protocol_add_instance(struct snd_dg00x * dg00x);
+void snd_dg00x_protocol_remove_instance(struct snd_dg00x *dg00x);
+int snd_dg00x_protocol_register(void);
+void snd_dg00x_protocol_unregister(void);
+
 extern const unsigned int snd_dg00x_stream_rates[SND_DG00X_RATE_COUNT];
 extern const unsigned int
 snd_dg00x_stream_mbla_data_channels[SND_DG00X_RATE_COUNT];
@@ -93,14 +111,6 @@ void snd_dg00x_stream_destroy_duplex(struct snd_dg00x *dg00x);
 void snd_dg00x_stream_lock_changed(struct snd_dg00x *dg00x);
 int snd_dg00x_stream_lock_try(struct snd_dg00x *dg00x);
 void snd_dg00x_stream_lock_release(struct snd_dg00x *dg00x);
-
-void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
-				  struct snd_pcm_substream *pcm,
-				  __be32 *buffer, unsigned int frames);
-void snd_dg00x_protocol_fill_midi(struct amdtp_stream *s,
-				  __be32 *buffer, unsigned int frames);
-void snd_dg00x_protocol_pull_midi(struct amdtp_stream *s,
-				  __be32 *buffer, unsigned int frames);
 
 int snd_dg00x_create_pcm_devices(struct snd_dg00x *dg00x);
 

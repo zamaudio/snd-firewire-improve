@@ -167,3 +167,194 @@ void snd_dg00x_protocol_pull_midi(struct amdtp_stream *s,
 		buffer += s->data_block_quadlets;
 	}
 }
+
+struct workqueue_struct *midi_wq;
+
+static void send_midi_control(struct work_struct *work)
+{
+	struct snd_dg00x *dg00x =
+			container_of(work, struct snd_dg00x, midi_control);
+	struct fw_device *device = fw_parent_device(dg00x->unit);
+
+	unsigned int len;
+	__be32 buf = 0;
+	u8 *b = (u8 *)&buf;
+
+	/* Send MIDI control. */
+	if (!dg00x->out_control)
+		return;
+
+	do {
+		len = snd_rawmidi_transmit(dg00x->out_control, b + 1, 2);
+		if (len > 0) {
+			b[0] = 0x80;
+			b[3] = 0xc0 | len;
+
+			/* Don't check transaction status. */
+			fw_run_transaction(device->card,
+					   TCODE_WRITE_QUADLET_REQUEST,
+					   device->node_id, device->generation,
+					   device->max_speed,
+					   0xffffe0000400, &buf, sizeof(buf));
+		}
+	} while (len > 0);
+}
+
+void snd_dg00x_protocol_queue_midi_message(struct snd_dg00x *dg00x)
+{
+	queue_work(midi_wq, &dg00x->midi_control);
+}
+
+static struct snd_dg00x *instances[SNDRV_CARDS];
+static DEFINE_SPINLOCK(instances_lock);
+
+static void handle_unknown_message(struct snd_dg00x *dg00x,
+				   unsigned long long offset, u32 *buf)
+{
+	snd_printk(KERN_INFO"%08llx: %08x\n", offset, be32_to_cpu(*buf));
+}
+
+static void handle_midi_control(struct snd_dg00x *dg00x, u32 *buf,
+				unsigned int length)
+{
+	unsigned int i;
+	unsigned int len;
+	u8 *b;
+
+	if (dg00x->in_control == NULL)
+		return;
+
+	length /= 4;
+
+	for (i = 0; i < length; i++) {
+		b = (u8 *)&buf[i];
+		len = b[3] & 0xf;
+		if (len > 0)
+			snd_rawmidi_receive(dg00x->in_control, b + 1, len);
+	}
+}
+
+static void handle_message(struct fw_card *card, struct fw_request *request,
+			   int tcode, int destination, int source,
+			   int generation, unsigned long long offset,
+			   void *data, size_t length, void *callback_data)
+{
+	u32 *buf = (__be32 *)data;
+	struct fw_device *device;
+	struct snd_dg00x *dg00x;
+	unsigned int i;
+
+	spin_lock_irq(&instances_lock);
+	for (i = 0; i < SNDRV_CARDS; i++) {
+		dg00x = instances[i];
+		if (dg00x == NULL)
+			continue;
+		device = fw_parent_device(dg00x->unit);
+		if (device->card != card)
+			continue;
+		smp_rmb();	/* node id vs. generation */
+		if (device->node_id != source)
+			continue;
+		break;
+	}
+
+	if (offset == 0xffffe0000000)
+		handle_unknown_message(dg00x, offset, buf);
+	else if (offset == 0xffffe0000004)
+		handle_midi_control(dg00x, buf, length);
+
+	spin_unlock_irq(&instances_lock);
+	fw_send_response(card, request, RCODE_COMPLETE);
+}
+
+/*
+ * Use the same range of address for asynchronous messages from any devices, to
+ * save resources on host controller.
+ */
+static struct fw_address_handler async_handler;
+
+int snd_dg00x_protocol_add_instance(struct snd_dg00x * dg00x)
+{
+	struct fw_device *device = fw_parent_device(dg00x->unit);
+	__be32 data[2];
+	unsigned int i;
+	int err;
+
+	/* Unknown. 4bytes. */
+	data[0] = cpu_to_be32((device->card->node_id << 16) |
+			      (async_handler.offset >> 32));
+	data[1] = cpu_to_be32(async_handler.offset);
+	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
+				 0xffffe0000014ull, &data, sizeof(data), 0);
+	if (err < 0)
+		return err;
+
+	/* Asynchronous transactions for MIDI control message. 8 bytes. */
+	data[0] = cpu_to_be32((device->card->node_id << 16) |
+			      (async_handler.offset >> 32));
+	data[1] = cpu_to_be32(async_handler.offset + 4);
+	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
+				 0xffffe0000008ull, &data, sizeof(data), 0);
+	if (err < 0)
+		return err;
+
+	spin_lock_irq(&instances_lock);
+	for (i = 0; i < SNDRV_CARDS; i++) {
+		if (instances[i] != NULL)
+			continue;
+		instances[i] = dg00x;
+		break;
+	}
+	spin_unlock_irq(&instances_lock);
+
+	INIT_WORK(&dg00x->midi_control, send_midi_control);
+
+	return 0;
+}
+
+void snd_dg00x_protocol_remove_instance(struct snd_dg00x *dg00x)
+{
+	unsigned int i;
+
+	spin_lock_irq(&instances_lock);
+	for (i = 0; i < SNDRV_CARDS; i++) {
+		if (instances[i] != dg00x)
+			continue;
+		instances[i] = NULL;
+		break;
+	}
+	spin_unlock_irq(&instances_lock);
+}
+
+int snd_dg00x_protocol_register(void)
+{
+	static const struct fw_address_region resp_register_region = {
+		.start	= 0xffffe0000000ull,
+		.end	= 0xffffe000ffffull,
+	};
+	int err;
+
+	midi_wq = alloc_workqueue("snd-digi00x",
+				  WQ_SYSFS | WQ_POWER_EFFICIENT, 0);
+	if (midi_wq == NULL)
+		return -ENOMEM;
+
+	async_handler.length = 12;
+	async_handler.address_callback = handle_message;
+	async_handler.callback_data = NULL;
+
+	err = fw_core_add_address_handler(&async_handler,
+					  &resp_register_region);
+	if (err < 0) {
+		destroy_workqueue(midi_wq);
+		return err;
+	}
+
+	return 0;
+}
+
+void snd_dg00x_protocol_unregister(void)
+{
+	destroy_workqueue(midi_wq);
+	fw_core_remove_address_handler(&async_handler);
+}
