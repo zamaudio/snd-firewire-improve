@@ -8,12 +8,12 @@
  * Licensed under the terms of the GNU General Public License, version 2.
  */
 
+#include "digi00x.h"
+
 /*
  * The double-oh-three algorism is invented by Robin Gareus and Damien Zammit
  * in 2012, with reverse-engineering for Digi 003 Rack.
  */
-
-#include "digi00x.h"
 
 struct dot_state {
 	__u8 carry;
@@ -24,7 +24,7 @@ struct dot_state {
 #define BYTE_PER_SAMPLE (4)
 #define MAGIC_DOT_BYTE (2)
 
-#define MAGIC_BYTE_OFF(x) (((x) * BYTE_PER_SAMPLE ) + MAGIC_DOT_BYTE)
+#define MAGIC_BYTE_OFF(x) (((x) * BYTE_PER_SAMPLE) + MAGIC_DOT_BYTE)
 
 /*
  * double-oh-three look up table
@@ -33,7 +33,8 @@ struct dot_state {
  * @param off channel offset shift
  * @return salt to XOR with given data
  */
-static const __u8 dot_scrt(const __u8 idx, const unsigned int off) {
+static const __u8 dot_scrt(const __u8 idx, const unsigned int off)
+{
 	/*
 	 * the length of the added pattern only depends on the lower nibble
 	 * of the last non-zero data
@@ -80,7 +81,7 @@ static inline void dot_state_reset(struct dot_state *state)
 
 static void dot_encode_step(struct dot_state *state, __be32 *const buffer)
 {
-	__u8 * const data = (__u8*) buffer;
+	__u8 * const data = (__u8 *) buffer;
 
 	if (data[MAGIC_DOT_BYTE] != 0x00) {
 		state->off = 0;
@@ -273,7 +274,7 @@ static void handle_message(struct fw_card *card, struct fw_request *request,
  */
 static struct fw_address_handler async_handler;
 
-int snd_dg00x_protocol_add_instance(struct snd_dg00x * dg00x)
+int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x)
 {
 	struct fw_device *device = fw_parent_device(dg00x->unit);
 	__be32 data[2];

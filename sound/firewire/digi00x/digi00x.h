@@ -17,6 +17,7 @@
 #include <linux/mod_devicetable.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
+#include <linux/workqueue.h>
 
 /* TODO: remove when merging to upstream. */
 #include "../../../backport.h"
@@ -41,9 +42,6 @@ struct snd_dg00x {
 
 	struct mutex mutex;
 	spinlock_t lock;
-
-	/* Asynchronous message handler. */
-	struct fw_address_handler message_handler;
 
 	struct amdtp_stream tx_stream;
 	struct fw_iso_resources tx_resources;
@@ -96,7 +94,7 @@ void snd_dg00x_protocol_fill_midi(struct amdtp_stream *s,
 void snd_dg00x_protocol_pull_midi(struct amdtp_stream *s,
 				  __be32 *buffer, unsigned int frames);
 void snd_dg00x_protocol_queue_midi_message(struct snd_dg00x *dg00x);
-int snd_dg00x_protocol_add_instance(struct snd_dg00x * dg00x);
+int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x);
 void snd_dg00x_protocol_remove_instance(struct snd_dg00x *dg00x);
 int snd_dg00x_protocol_register(void);
 void snd_dg00x_protocol_unregister(void);

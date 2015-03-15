@@ -21,7 +21,7 @@ static void proc_read_clock(struct snd_info_entry *entry,
 		[SND_DG00X_OPTICAL_MODE_ADAT] = "adat",
 		[SND_DG00X_OPTICAL_MODE_SPDIF] = "s/pdif",
 	};
-        struct snd_dg00x *dg00x = entry->private_data;
+	struct snd_dg00x *dg00x = entry->private_data;
 	unsigned int rate;
 	enum snd_dg00x_clock clock;
 	enum snd_dg00x_optical_mode mode;

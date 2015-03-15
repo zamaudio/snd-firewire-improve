@@ -244,7 +244,7 @@ sfc_found:
 	 * We do not know the actual MIDI FIFO size of most devices.  Just
 	 * assume two bytes, i.e., one byte can be received over the bus while
 	 * the previous one is transmitted over MIDI.
-	 * (The value here is adjusted for midi_ratelimit_per_packet().)
+	 * (The value here is adjusted for amdtp_midi_ratelimit_per_packet().)
 	 */
 	s->midi_fifo_limit = rate - MIDI_BYTES_PER_SECOND * s->syt_interval + 1;
 }
