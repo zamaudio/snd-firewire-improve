@@ -191,9 +191,9 @@ static int keep_resources(struct snd_dg00x *dg00x, unsigned int rate)
 	dg00x->tx_stream.midi_position = 0;
 
 	/* Apply doubleOhThree algorism. */
-	dg00x->rx_stream.transfer_samples = double_oh_three_write_s32;
-	dg00x->rx_stream.transfer_midi = double_oh_three_fill_midi;
-	dg00x->tx_stream.transfer_midi = double_oh_three_pull_midi;
+	dg00x->rx_stream.transfer_samples = snd_dg00x_protocol_write_s32;
+	dg00x->rx_stream.transfer_midi = snd_dg00x_protocol_fill_midi;
+	dg00x->tx_stream.transfer_midi = snd_dg00x_protocol_pull_midi;
 
 	return 0;
 error:
