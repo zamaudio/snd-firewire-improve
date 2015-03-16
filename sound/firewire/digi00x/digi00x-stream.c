@@ -17,6 +17,13 @@ const unsigned int snd_dg00x_stream_rates[SND_DG00X_RATE_COUNT] = {
 	[3] = 96000,
 };
 
+const unsigned int snd_dg00x_stream_clocks[SND_DG00X_CLOCK_COUNT] = {
+	[0] = 0,
+	[1] = 1,
+	[2] = 2,
+	[3] = 3,
+};
+
 /* Multi Bit Linear Audio data channels for each sampling transfer frequency. */
 const unsigned int
 snd_dg00x_stream_mbla_data_channels[SND_DG00X_RATE_COUNT] = {
@@ -82,6 +89,23 @@ int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 		err = -EIO;
 
 	return err;
+}
+
+int snd_dg00x_stream_set_clock(struct snd_dg00x *dg00x, unsigned int clock)
+{
+	__be32 data;
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(snd_dg00x_stream_clocks); i++) {
+		if (clock == snd_dg00x_stream_clocks[i])
+			break;
+	}
+	if (i == ARRAY_SIZE(snd_dg00x_stream_clocks))
+		return -EIO;
+
+	data = cpu_to_be32(i);
+	return snd_fw_transaction(dg00x->unit, TCODE_WRITE_QUADLET_REQUEST,
+				  0xffffe0000118ull, &data, sizeof(data), 0);
 }
 
 int snd_dg00x_stream_get_optical_mode(struct snd_dg00x *dg00x,
