@@ -1,15 +1,15 @@
-= Developing for snd-firewire-lib, snd-fireworks, snd-bebob, snd-dice and snd-oxfw =
+= Developing for snd-firewire-lib, snd-fireworks, snd-bebob, snd-dice, snd-oxfw and snd-digi00x =
 
-2014/10/22 坂本 貴史
+2015/03/16 坂本 貴史
 Takashi Sakamoto <o-takashi@sakamocchi.jp>
 
 == General ==
 
 This repository is a test for my patch candidates for ALSA firewire stack.
-You can install my snd-firewire-lib, snd-fireworks, snd-bebob and snd-oxfw by DKMS.
+You can install my snd-firewire-lib, snd-fireworks, snd-bebob, snd-dice, snd-oxfw, snd-digi00x by DKMS.
 
 
-== snd-firewire-lib, snd-bebob, snd-fireworks, snd-dice and snd-oxfw ==
+== snd-firewire-lib, snd-bebob, snd-fireworks, snd-dice, snd-oxfw and snd-digi00x ==
 
 They are device drivers utilize Advanced Linux Sound Architecture (ALSA) and Linux
 Firewire Subsystem (so called "juju").
@@ -17,10 +17,8 @@ Firewire Subsystem (so called "juju").
  - snd-fireworks: for devices based on Echo Audio's Fireworks module
  - snd-dice: for devices based on TC Applied Technologies DICE chipset family
  - snd-oxfw: for devices based on Oxford Semiconductor OXFW970/971 chipset
+ - snd-digi00x: for Digidesign 002/003 family
  - snd-firewire-lib: for helper functions of AMDTP/CMP/FCP and AV/C commands
-
-There is a project in user land, "FFADO".
-http://www.ffado.org/
 
 My aim is implementing streaming functionality in ALSA, in kernel land.
 
@@ -32,6 +30,7 @@ I test these drivers with:
  - snd-dice: TC Electronic Impact Twin
  - snd-oxfw: Behringer F-Control 202
  - snd-oxfw: Griffin FireWave
+ - snd-digi00x: Digi 002 Rack
 
 Some dedicated testers test these drivers with:
  - snd-bebob: Edirol FA-66 (great thanks to Fryderyk Dziarmagowski)
@@ -49,16 +48,17 @@ Some dedicated testers test these drivers with:
 
 == Current status ==
 
- - Capture/playback of PCM/MIDI is supported at any sampling rate, any clock source
- - HWDEP interface is supported for mixer control application
+ - Linux 3.16 includes snd-fireworks/snd-bebob.
+ - Linux 3.19 includes snd-dice/snd-oxfw.
+ - snd-digi00x is under development.
 
 == Easy instraction with DKMS ==
 
 DKMS - Dynamic Kernel Module Support is easy for installing or updating external modules.
 http://linux.dell.com/dkms/
 
-This instruction is for Debian/Ubuntu. You need to make your arrangement for
-the other Linux distribution if you use.
+This instruction is for Debian/Ubuntu. You need to make your arrangement for the
+other Linux distribution if you use.
 
 Then you need to install 'dkms' package.
  $ sudo apt-get install dkms
@@ -80,27 +80,29 @@ Uninstall
 
 == Bug repots  ==
 
-Linux 3.16 or later already includes snd-bebob and snd-fireworks, thus any bug reports
-should be sent to alsa-devel.
+Linux 3.16 or later already includes snd-bebob and snd-fireworks. And 3.19 or later
+also includes snd-dice and snd-oxfw. Thus any bug reports should be sent to alsa-devel.
 
 http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
 
-I add proc interface to help debug. Please send the output to me with your
-experience.
+I add proc interface to help debug. Please report your experiences with the output.
 
 snd-bebob:
- - /proc/asound/cardX/#firmware
- - /proc/asound/cardX/#formation
- - /proc/asound/cardX/#clock
- - /proc/asound/cardX/#meter (if the device has)
+ - /proc/asound/cardX/firewire/firmware
+ - /proc/asound/cardX/firewire/formation
+ - /proc/asound/cardX/firewire/clock
+ - /proc/asound/cardX/firewire/meter (if the device has)
 
 snd-fireworks:
- - /proc/asound/cardX/#firmware
- - /proc/asound/cardX/#clock
- - /proc/asound/cardX/#meters
+ - /proc/asound/cardX/firewire/firmware
+ - /proc/asound/cardX/firewire/clock
+ - /proc/asound/cardX/firewire/meters
 
 snd-dice:
  - /proc/asound/cardX/dice
 
 snd-oxfw:
- - /proc/asound/cardX/#formation
+ - /proc/asound/cardX/firewire/formation
+
+snd-digi00x:
+ - /proc/asound/cardX/firewire/clock
