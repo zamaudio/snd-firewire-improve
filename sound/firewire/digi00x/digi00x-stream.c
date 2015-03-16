@@ -78,7 +78,7 @@ int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 		return err;
 
 	*clock = be32_to_cpu(data) & 0x0f;
-	if (*clock >= ARRAY_SIZE(snd_dg00x_stream_rates))
+	if (*clock >= SND_DG00X_CLOCK_COUNT)
 		err = -EIO;
 
 	return err;
