@@ -91,9 +91,8 @@ static void dot_encode_step(struct dot_state *state, __be32 *const buffer)
 	state->carry = dot_scrt(state->idx, ++(state->off));
 }
 
-void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
-				  struct snd_pcm_substream *pcm,
-				  __be32 *buffer, unsigned int frames)
+static void write_pcm_s32(struct amdtp_stream *s, struct snd_pcm_substream *pcm,
+			  __be32 *buffer, unsigned int frames)
 {
 	struct snd_pcm_runtime *runtime = pcm->runtime;
 	unsigned int channels, remaining_frames, i, c;
@@ -121,8 +120,8 @@ void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
 	}
 }
 
-void snd_dg00x_protocol_fill_midi(struct amdtp_stream *s,
-				  __be32 *buffer, unsigned int frames)
+static void fill_midi(struct amdtp_stream *s, __be32 *buffer,
+		      unsigned int frames)
 {
 	unsigned int f, port;
 	u8 *b;
@@ -153,8 +152,8 @@ void snd_dg00x_protocol_fill_midi(struct amdtp_stream *s,
 	}
 }
 
-void snd_dg00x_protocol_pull_midi(struct amdtp_stream *s,
-				  __be32 *buffer, unsigned int frames)
+static void pull_midi(struct amdtp_stream *s, __be32 *buffer,
+		      unsigned int frames)
 {
 	unsigned int f;
 	u8 *b;
@@ -176,9 +175,9 @@ void snd_dg00x_protocol_specialize_streams(struct snd_dg00x *dg00x,
 	unsigned int p;
 
 	/* Use own way to multiplex data. */
-	dg00x->rx_stream.transfer_samples = snd_dg00x_protocol_write_s32;
-	dg00x->rx_stream.transfer_midi = snd_dg00x_protocol_fill_midi;
-	dg00x->tx_stream.transfer_midi = snd_dg00x_protocol_pull_midi;
+	dg00x->rx_stream.transfer_samples = write_pcm_s32;
+	dg00x->rx_stream.transfer_midi = fill_midi;
+	dg00x->tx_stream.transfer_midi = pull_midi;
 
 	/* The first data channel in a packet is for MIDI conformant data. */
 	for (p = 0; p < snd_dg00x_stream_mbla_data_channels[rate_index]; p++) {
