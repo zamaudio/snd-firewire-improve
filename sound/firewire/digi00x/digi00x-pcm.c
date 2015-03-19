@@ -124,7 +124,9 @@ static int pcm_open(struct snd_pcm_substream *substream)
 		goto err_locked;
 
 	err = snd_dg00x_stream_get_clock(dg00x, &clock);
-	if (clock != SND_DG00X_CLOCK_INTERNAL) {
+	if ((clock != SND_DG00X_CLOCK_INTERNAL) |
+	    amdtp_stream_pcm_running(&dg00x->rx_stream) |
+	    amdtp_stream_pcm_running(&dg00x->tx_stream)) {
 		err = snd_dg00x_stream_get_rate(dg00x, &rate);
 		if (err < 0)
 			goto err_locked;
