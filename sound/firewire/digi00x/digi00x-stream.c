@@ -332,9 +332,15 @@ void snd_dg00x_stream_stop_duplex(struct snd_dg00x *dg00x)
 
 	if (dg00x->playback_substreams > 0)
 		return;
-	finish_session(dg00x);
 	amdtp_stream_stop(&dg00x->rx_stream);
+	finish_session(dg00x);
 	release_resources(dg00x);
+
+	/*
+	 * Just after finishing the seccion, the device may lost transmitting
+	 * functionality for a short time.
+	 */
+	msleep(50);
 }
 
 /* TODO: investigation. */
