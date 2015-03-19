@@ -35,6 +35,16 @@
 #include "../iso-resources.h"
 #include "../amdtp.h"
 
+/*
+ * The double-oh-three algorithm is discovered by Robin Gareus and Damien
+ * Zammit in 2012, with reverse-engineering for Digi 003 Rack.
+ */
+struct dot_state {
+	__u8 carry;
+	__u8 idx;
+	unsigned int off;
+};
+
 struct snd_dg00x {
 	struct snd_card *card;
 	struct fw_unit *unit;
@@ -46,6 +56,7 @@ struct snd_dg00x {
 	struct amdtp_stream tx_stream;
 	struct fw_iso_resources tx_resources;
 
+	struct dot_state state;
 	struct amdtp_stream rx_stream;
 	struct fw_iso_resources rx_resources;
 

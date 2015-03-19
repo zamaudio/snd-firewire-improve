@@ -10,17 +10,6 @@
 
 #include "digi00x.h"
 
-/*
- * The double-oh-three algorism is invented by Robin Gareus and Damien Zammit
- * in 2012, with reverse-engineering for Digi 003 Rack.
- */
-
-struct dot_state {
-	__u8 carry;
-	__u8 idx;
-	unsigned int off;
-};
-
 #define BYTE_PER_SAMPLE (4)
 #define MAGIC_DOT_BYTE (2)
 
@@ -72,13 +61,6 @@ static const __u8 dot_scrt(const __u8 idx, const unsigned int off)
 	return ((nib[14 + off - len[ln]]) | (hr << 4));
 }
 
-static inline void dot_state_reset(struct dot_state *state)
-{
-	state->carry = 0x00;
-	state->idx   = 0x00;
-	state->off   = 0;
-}
-
 static void dot_encode_step(struct dot_state *state, __be32 *const buffer)
 {
 	__u8 * const data = (__u8 *) buffer;
@@ -94,10 +76,11 @@ static void dot_encode_step(struct dot_state *state, __be32 *const buffer)
 static void write_pcm_s32(struct amdtp_stream *s, struct snd_pcm_substream *pcm,
 			  __be32 *buffer, unsigned int frames)
 {
+	struct snd_dg00x *dg00x =
+			container_of(s, struct snd_dg00x, rx_stream);
 	struct snd_pcm_runtime *runtime = pcm->runtime;
 	unsigned int channels, remaining_frames, i, c;
 	const u32 *src;
-	static struct dot_state state;
 
 	channels = s->pcm_channels;
 	src = (void *)runtime->dma_area +
@@ -105,12 +88,11 @@ static void write_pcm_s32(struct amdtp_stream *s, struct snd_pcm_substream *pcm,
 	remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
 
 	for (i = 0; i < frames; ++i) {
-		dot_state_reset(&state);
-
 		for (c = 0; c < channels; ++c) {
 			buffer[s->pcm_positions[c]] =
 					cpu_to_be32((*src >> 8) | 0x40000000);
-			dot_encode_step(&state, &buffer[s->pcm_positions[c]]);
+			dot_encode_step(&dg00x->state,
+					&buffer[s->pcm_positions[c]]);
 			src++;
 		}
 
@@ -173,6 +155,11 @@ void snd_dg00x_protocol_specialize_streams(struct snd_dg00x *dg00x,
 					   unsigned int rate_index)
 {
 	unsigned int p;
+
+	/* Initialize dot status. */
+	dg00x->state.carry = 0x00;
+	dg00x->state.idx   = 0x00;
+	dg00x->state.off   = 0;
 
 	/* Use own way to multiplex data. */
 	dg00x->rx_stream.transfer_samples = write_pcm_s32;
