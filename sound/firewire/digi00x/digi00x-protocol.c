@@ -169,6 +169,27 @@ void snd_dg00x_protocol_pull_midi(struct amdtp_stream *s,
 	}
 }
 
+/* This function must be called when no streams running. */
+void snd_dg00x_protocol_specialize_streams(struct snd_dg00x *dg00x,
+					   unsigned int rate_index)
+{
+	unsigned int p;
+
+	/* Use own way to multiplex data. */
+	dg00x->rx_stream.transfer_samples = snd_dg00x_protocol_write_s32;
+	dg00x->rx_stream.transfer_midi = snd_dg00x_protocol_fill_midi;
+	dg00x->tx_stream.transfer_midi = snd_dg00x_protocol_pull_midi;
+
+	/* The first data channel in a packet is for MIDI conformant data. */
+	for (p = 0; p < snd_dg00x_stream_mbla_data_channels[rate_index]; p++) {
+		dg00x->rx_stream.pcm_positions[p] = p + 1;
+		dg00x->tx_stream.pcm_positions[p] = p + 1;
+	}
+	dg00x->rx_stream.midi_position = 0;
+	dg00x->tx_stream.midi_position = 0;
+
+}
+
 struct workqueue_struct *midi_wq;
 
 static void send_midi_control(struct work_struct *work)
