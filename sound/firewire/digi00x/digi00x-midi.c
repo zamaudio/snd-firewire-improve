@@ -161,7 +161,7 @@ static void set_midi_substream_names(struct snd_dg00x *dg00x,
 		} else {
 			snprintf(subs->name, sizeof(subs->name),
 				 "%s MIDI %d",
-				 dg00x->card->shortname, subs->number + 1);
+				 dg00x->card->shortname, subs->number);
 		}
 	}
 }
