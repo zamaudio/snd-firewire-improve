@@ -80,9 +80,18 @@ static int pcm_init_hw_params(struct snd_dg00x *dg00x,
 		.periods_min = 2,
 		.periods_max = UINT_MAX,
 	};
+	struct amdtp_stream *s;
 	int err;
 
 	substream->runtime->hw = hardware;
+
+	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+		substream->runtime->hw.formats = AMDTP_IN_PCM_FORMAT_BITS;
+		s = &dg00x->tx_stream;
+	} else {
+		substream->runtime->hw.formats = AMDTP_OUT_PCM_FORMAT_BITS;
+		s = &dg00x->rx_stream;
+	}
 
 	err = snd_pcm_hw_rule_add(substream->runtime, 0,
 				  SNDRV_PCM_HW_PARAM_CHANNELS,
@@ -98,12 +107,7 @@ static int pcm_init_hw_params(struct snd_dg00x *dg00x,
 	if (err < 0)
 		goto end;
 
-	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-		err = amdtp_stream_add_pcm_hw_constraints(&dg00x->tx_stream,
-							  substream->runtime);
-	else
-		err = amdtp_stream_add_pcm_hw_constraints(&dg00x->rx_stream,
-							  substream->runtime);
+	err = amdtp_stream_add_pcm_hw_constraints(s, substream->runtime);
 end:
 	return err;
 }
@@ -176,8 +180,9 @@ static int pcm_playback_hw_params(struct snd_pcm_substream *substream,
 		dg00x->playback_substreams++;
 		mutex_unlock(&dg00x->mutex);
 	}
-	amdtp_stream_set_pcm_format(&dg00x->rx_stream,
-				    params_format(hw_params));
+	/* Apply double-oh-three algorism. */
+	snd_dg00x_protocol_set_pcm_function(&dg00x->rx_stream,
+					    params_format(hw_params));
 	return snd_pcm_lib_alloc_vmalloc_buffer(substream,
 						params_buffer_bytes(hw_params));
 }
@@ -238,8 +243,10 @@ static int pcm_playback_prepare(struct snd_pcm_substream *substream)
 	mutex_lock(&dg00x->mutex);
 
 	err = snd_dg00x_stream_start_duplex(dg00x, runtime->rate);
-	if (err >= 0)
+	if (err >= 0) {
 		amdtp_stream_pcm_prepare(&dg00x->rx_stream);
+		snd_dg00x_protocol_init_state(&dg00x->state);
+	}
 
 	mutex_unlock(&dg00x->mutex);
 

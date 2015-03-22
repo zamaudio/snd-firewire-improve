@@ -98,8 +98,17 @@ enum snd_dg00x_optical_mode {
 	SND_DG00X_OPTICAL_MODE_SPDIF,
 };
 
-void snd_dg00x_protocol_specialize_streams(struct snd_dg00x *dg00x,
-					   unsigned int rate_index);
+/* Initialize dot status. */
+static inline void snd_dg00x_protocol_init_state(struct dot_state *state)
+{
+	state->carry = 0x00;
+	state->idx = 0x00;
+	state->off = 0;
+}
+
+void snd_dg00x_protocol_set_pcm_function(struct amdtp_stream *s,
+					 snd_pcm_format_t format);
+void snd_dg00x_protocol_set_midi_function(struct snd_dg00x *dg00x);
 void snd_dg00x_protocol_queue_midi_message(struct snd_dg00x *dg00x);
 int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x);
 void snd_dg00x_protocol_remove_instance(struct snd_dg00x *dg00x);

@@ -158,7 +158,7 @@ static void release_resources(struct snd_dg00x *dg00x)
 
 static int keep_resources(struct snd_dg00x *dg00x, unsigned int rate)
 {
-	unsigned int i;
+	unsigned int i, c;
 	__be32 data;
 	int err;
 
@@ -196,7 +196,15 @@ static int keep_resources(struct snd_dg00x *dg00x, unsigned int rate)
 	if (err < 0)
 		goto error;
 
-	snd_dg00x_protocol_specialize_streams(dg00x, i);
+	/* The first data channel in a packet is for MIDI conformant data. */
+	dg00x->rx_stream.midi_position = 0;
+	dg00x->tx_stream.midi_position = 0;
+	for (c = 0; c < snd_dg00x_stream_mbla_data_channels[i]; c++) {
+		dg00x->rx_stream.pcm_positions[c] = c + 1;
+		dg00x->tx_stream.pcm_positions[c] = c + 1;
+	}
+
+	snd_dg00x_protocol_set_midi_function(dg00x);
 
 	return 0;
 error:

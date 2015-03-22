@@ -8,6 +8,7 @@
  * Licensed under the terms of the GNU General Public License, version 2.
  */
 
+#include <sound/asound.h>
 #include "digi00x.h"
 
 #define BYTE_PER_SAMPLE (4)
@@ -71,6 +72,35 @@ static void dot_encode_step(struct dot_state *state, __be32 *const buffer)
 	}
 	data[MAGIC_DOT_BYTE] ^= state->carry;
 	state->carry = dot_scrt(state->idx, ++(state->off));
+}
+
+static void write_pcm_s16(struct amdtp_stream *s, struct snd_pcm_substream *pcm,
+			  __be32 *buffer, unsigned int frames)
+{
+	struct snd_dg00x *dg00x =
+			container_of(s, struct snd_dg00x, rx_stream);
+	struct snd_pcm_runtime *runtime = pcm->runtime;
+	unsigned int channels, remaining_frames, i, c;
+	const u16 *src;
+
+	channels = s->pcm_channels;
+	src = (void *)runtime->dma_area +
+			frames_to_bytes(runtime, s->pcm_buffer_pointer);
+	remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
+
+	for (i = 0; i < frames; ++i) {
+		for (c = 0; c < channels; ++c) {
+			buffer[s->pcm_positions[c]] =
+					cpu_to_be32((*src << 8) | 0x40000000);
+			dot_encode_step(&dg00x->state,
+					&buffer[s->pcm_positions[c]]);
+			src++;
+		}
+
+		buffer += s->data_block_quadlets;
+		if (--remaining_frames == 0)
+			src = (void *)runtime->dma_area;
+	}
 }
 
 static void write_pcm_s32(struct amdtp_stream *s, struct snd_pcm_substream *pcm,
@@ -150,30 +180,30 @@ static void pull_midi(struct amdtp_stream *s, __be32 *buffer,
 	}
 }
 
-/* This function must be called when no streams running. */
-void snd_dg00x_protocol_specialize_streams(struct snd_dg00x *dg00x,
-					   unsigned int rate_index)
+void snd_dg00x_protocol_set_pcm_function(struct amdtp_stream *s,
+					 snd_pcm_format_t format)
 {
-	unsigned int p;
+	if (WARN_ON(amdtp_stream_pcm_running(s)))
+		return;
 
-	/* Initialize dot status. */
-	dg00x->state.carry = 0x00;
-	dg00x->state.idx   = 0x00;
-	dg00x->state.off   = 0;
+	switch (format) {
+	default:
+		WARN_ON(1);
+		/* fall through */
+	case SNDRV_PCM_FORMAT_S16:
+		s->transfer_samples = write_pcm_s16;
+		break;
+	case SNDRV_PCM_FORMAT_S32:
+		s->transfer_samples = write_pcm_s32;
+		break;
+	}
+}
 
-	/* Use own way to multiplex data. */
-	dg00x->rx_stream.transfer_samples = write_pcm_s32;
+/* Use own way to multiplex MIDI messages for data channels. */
+void snd_dg00x_protocol_set_midi_function(struct snd_dg00x *dg00x)
+{
 	dg00x->rx_stream.transfer_midi = fill_midi;
 	dg00x->tx_stream.transfer_midi = pull_midi;
-
-	/* The first data channel in a packet is for MIDI conformant data. */
-	for (p = 0; p < snd_dg00x_stream_mbla_data_channels[rate_index]; p++) {
-		dg00x->rx_stream.pcm_positions[p] = p + 1;
-		dg00x->tx_stream.pcm_positions[p] = p + 1;
-	}
-	dg00x->rx_stream.midi_position = 0;
-	dg00x->tx_stream.midi_position = 0;
-
 }
 
 struct workqueue_struct *midi_wq;
