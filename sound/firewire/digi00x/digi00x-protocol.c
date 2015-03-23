@@ -323,7 +323,8 @@ int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x)
 			      (async_handler.offset >> 32));
 	data[1] = cpu_to_be32(async_handler.offset);
 	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
-				 0xffffe0000014ull, &data, sizeof(data), 0);
+				 DG00X_ADDR_BASE + DG00X_OFFSET_MIDI_CTL_ADDR,
+				 &data, sizeof(data), 0);
 	if (err < 0)
 		return err;
 
@@ -332,7 +333,8 @@ int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x)
 			      (async_handler.offset >> 32));
 	data[1] = cpu_to_be32(async_handler.offset + 4);
 	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
-				 0xffffe0000008ull, &data, sizeof(data), 0);
+				 DG00X_ADDR_BASE + DG00X_OFFSET_NOTIFY_ADDR,
+				 &data, sizeof(data), 0);
 	if (err < 0)
 		return err;
 

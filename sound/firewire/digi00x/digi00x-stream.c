@@ -34,7 +34,8 @@ int snd_dg00x_stream_get_rate(struct snd_dg00x *dg00x, unsigned int *rate)
 	int err;
 
 	err = snd_fw_transaction(dg00x->unit, TCODE_READ_QUADLET_REQUEST,
-				 0xffffe0000110ull, &data, sizeof(data), 0);
+				 DG00X_ADDR_BASE + DG00X_OFFSET_RATE_GET,
+				 &data, sizeof(data), 0);
 	if (err < 0)
 		goto end;
 
@@ -63,7 +64,8 @@ int snd_dg00x_stream_set_rate(struct snd_dg00x *dg00x, unsigned int rate)
 
 	data = cpu_to_be32(i);
 	return snd_fw_transaction(dg00x->unit, TCODE_WRITE_QUADLET_REQUEST,
-				  0xffffe0000110ull, &data, sizeof(data), 0);
+				  DG00X_ADDR_BASE + DG00X_OFFSET_RATE_SET,
+				  &data, sizeof(data), 0);
 }
 
 int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
@@ -73,7 +75,8 @@ int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 	int err;
 
 	err = snd_fw_transaction(dg00x->unit, TCODE_READ_QUADLET_REQUEST,
-				 0xffffe0000118ull, &data, sizeof(data), 0);
+				 DG00X_ADDR_BASE + DG00X_OFFSET_CLOCK_SOURCE,
+				 &data, sizeof(data), 0);
 	if (err < 0)
 		return err;
 
@@ -84,26 +87,13 @@ int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 	return err;
 }
 
-int snd_dg00x_stream_get_optical_mode(struct snd_dg00x *dg00x,
-				      enum snd_dg00x_optical_mode *mode)
-{
-	__be32 data;
-	int err;
-
-	err = snd_fw_transaction(dg00x->unit, TCODE_READ_QUADLET_REQUEST,
-				 0xffffe000011c, &data, sizeof(data), 0);
-	if (err >= 0)
-		*mode = be32_to_cpu(data) & 0x01;
-
-	return err;
-}
-
 static void finish_session(struct snd_dg00x *dg00x)
 {
 	__be32 data = cpu_to_be32(0x00000003);
 
 	snd_fw_transaction(dg00x->unit, TCODE_WRITE_QUADLET_REQUEST,
-			   0xffffe0000004ull, &data, sizeof(data), 0);
+			   DG00X_ADDR_BASE + DG00X_OFFSET_STREAMING_SET,
+			   &data, sizeof(data), 0);
 }
 
 static int begin_session(struct snd_dg00x *dg00x)
@@ -112,9 +102,8 @@ static int begin_session(struct snd_dg00x *dg00x)
 	u32 curr;
 	int err;
 
-	err = snd_fw_transaction(dg00x->unit,
-				 TCODE_READ_QUADLET_REQUEST,
-				 0xffffe0000000ull,
+	err = snd_fw_transaction(dg00x->unit, TCODE_READ_QUADLET_REQUEST,
+				 DG00X_ADDR_BASE + DG00X_OFFSET_STREAMING_STATE,
 				 &data, sizeof(data), 0);
 	if (err < 0)
 		goto error;
@@ -128,7 +117,8 @@ static int begin_session(struct snd_dg00x *dg00x)
 		data = cpu_to_be32(curr);
 		err = snd_fw_transaction(dg00x->unit,
 					 TCODE_WRITE_QUADLET_REQUEST,
-					 0xffffe0000004ull,
+					 DG00X_ADDR_BASE +
+					 DG00X_OFFSET_STREAMING_SET,
 					 &data, sizeof(data), 0);
 		if (err < 0)
 			goto error;
@@ -149,7 +139,8 @@ static void release_resources(struct snd_dg00x *dg00x)
 
 	/* Unregister isochronous channels for both direction. */
 	snd_fw_transaction(dg00x->unit, TCODE_WRITE_QUADLET_REQUEST,
-			   0xffffe0000100ull, &data, sizeof(data), 0);
+			   DG00X_ADDR_BASE + DG00X_OFFSET_ISOC_CHANNELS,
+			   &data, sizeof(data), 0);
 
 	/* Release isochronous resources. */
 	fw_iso_resources_free(&dg00x->tx_resources);
@@ -192,7 +183,8 @@ static int keep_resources(struct snd_dg00x *dg00x, unsigned int rate)
 	data = cpu_to_be32((dg00x->tx_resources.channel << 16) |
 			   dg00x->rx_resources.channel);
 	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_QUADLET_REQUEST,
-				 0xffffe0000100ull, &data, sizeof(data), 0);
+				 DG00X_ADDR_BASE + DG00X_OFFSET_ISOC_CHANNELS,
+				 &data, sizeof(data), 0);
 	if (err < 0)
 		goto error;
 

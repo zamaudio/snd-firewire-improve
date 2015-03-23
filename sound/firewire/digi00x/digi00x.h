@@ -36,7 +36,7 @@
 #include "../amdtp.h"
 
 /*
- * The double-oh-three algorithm is discovered by Robin Gareus and Damien
+ * The double-oh-three algorithm was discovered by Robin Gareus and Damien
  * Zammit in 2012, with reverse-engineering for Digi 003 Rack.
  */
 struct dot_state {
@@ -74,7 +74,32 @@ struct snd_dg00x {
 	struct snd_rawmidi_substream *out_control;
 };
 
-/* values for SND_DG00X_ADDR_OFFSET_RATE */
+#define DG00X_ADDR_BASE		0xffffe0000000ull
+
+#define DG00X_OFFSET_STREAMING_STATE	0x0000
+#define DG00X_OFFSET_STREAMING_SET	0x0004
+#define DG00X_OFFSET_NOTIFY_ADDR	0x0008
+/* For LSB of the address		0x000c */
+/* unknown				0x0010 */
+#define DG00X_OFFSET_MIDI_CTL_ADDR	0x0014
+/* For LSB of the address		0x0018 */
+/* unknown				0x001c */
+/* unknown				0x0020 */
+/* not used			0x0024--0x00ff */
+#define DG00X_OFFSET_ISOC_CHANNELS	0x0100
+/* unknown				0x0104 */
+/* unknown				0x0118 */
+/* unknown				0x010c */
+#define DG00X_OFFSET_RATE_SET		0x0110
+#define DG00X_OFFSET_RATE_GET		0x0114
+#define DG00X_OFFSET_CLOCK_SOURCE	0x0118
+#define DG00X_OFFSET_OPT_IFACE_MODE	0x011c
+/* unknown				0x0120 */
+/* unknown				0x0124 */
+/* unknown				0x0128 */
+/* unknown				0x012c */
+/* unknown				0x0138 */
+
 enum snd_dg00x_rate {
 	SND_DG00X_RATE_44100 = 0,
 	SND_DG00X_RATE_48000,
@@ -83,7 +108,6 @@ enum snd_dg00x_rate {
 	SND_DG00X_RATE_COUNT,
 };
 
-/* values for SND_DG00X_ADDR_OFFSET_CLOCK */
 enum snd_dg00x_clock {
 	SND_DG00X_CLOCK_INTERNAL = 0,
 	SND_DG00X_CLOCK_SPDIF,
@@ -92,10 +116,10 @@ enum snd_dg00x_clock {
 	SND_DG00X_CLOCK_COUNT,
 };
 
-/* values for SND_DG00X_ADDR_OFFSET_OPTICAL_MODE */
 enum snd_dg00x_optical_mode {
-	SND_DG00X_OPTICAL_MODE_ADAT = 0,
-	SND_DG00X_OPTICAL_MODE_SPDIF,
+	SND_DG00X_OPT_IFACE_MODE_ADAT = 0,
+	SND_DG00X_OPT_IFACE_MODE_SPDIF,
+	SND_DG00X_OPT_IFACE_MODE_COUNT,
 };
 
 /* Initialize dot status. */
@@ -122,8 +146,6 @@ int snd_dg00x_stream_get_rate(struct snd_dg00x *dg00x, unsigned int *rate);
 int snd_dg00x_stream_set_rate(struct snd_dg00x *dg00x, unsigned int rate);
 int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 			       enum snd_dg00x_clock *clock);
-int snd_dg00x_stream_get_optical_mode(struct snd_dg00x *dg00x,
-				      enum snd_dg00x_optical_mode *mode);
 int snd_dg00x_stream_init_duplex(struct snd_dg00x *dg00x);
 int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate);
 void snd_dg00x_stream_stop_duplex(struct snd_dg00x *dg00x);

@@ -8,6 +8,21 @@
 
 #include "./digi00x.h"
 
+static int get_optical_iface_mode(struct snd_dg00x *dg00x,
+				  enum snd_dg00x_optical_mode *mode)
+{
+	__be32 data;
+	int err;
+
+	err = snd_fw_transaction(dg00x->unit, TCODE_READ_QUADLET_REQUEST,
+				 DG00X_ADDR_BASE + DG00X_OFFSET_OPT_IFACE_MODE,
+				 &data, sizeof(data), 0);
+	if (err >= 0)
+		*mode = be32_to_cpu(data) & 0x01;
+
+	return err;
+}
+
 static void proc_read_clock(struct snd_info_entry *entry,
 			    struct snd_info_buffer *buf)
 {
@@ -18,8 +33,8 @@ static void proc_read_clock(struct snd_info_entry *entry,
 		[SND_DG00X_CLOCK_WORD] = "word clock",
 	};
 	static const char *const optical_name[] = {
-		[SND_DG00X_OPTICAL_MODE_ADAT] = "adat",
-		[SND_DG00X_OPTICAL_MODE_SPDIF] = "s/pdif",
+		[SND_DG00X_OPT_IFACE_MODE_ADAT] = "adat",
+		[SND_DG00X_OPT_IFACE_MODE_SPDIF] = "s/pdif",
 	};
 	struct snd_dg00x *dg00x = entry->private_data;
 	unsigned int rate;
@@ -30,7 +45,7 @@ static void proc_read_clock(struct snd_info_entry *entry,
 		return;
 	if (snd_dg00x_stream_get_clock(dg00x, &clock) < 0)
 		return;
-	if (snd_dg00x_stream_get_optical_mode(dg00x, &mode) < 0)
+	if (get_optical_iface_mode(dg00x, &mode) < 0)
 		return;
 
 	snd_iprintf(buf, "Sampling Rate: %d\n", rate);
