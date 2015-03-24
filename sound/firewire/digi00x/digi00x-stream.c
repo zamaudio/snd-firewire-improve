@@ -122,6 +122,16 @@ int snd_dg00x_stream_get_optical_mode(struct snd_dg00x *dg00x,
 	return err;
 }
 
+int snd_dg00x_stream_set_optical_mode(struct snd_dg00x *dg00x,
+				      unsigned int mode)
+{
+	__be32 data;
+
+	data = cpu_to_be32(mode);
+	return snd_fw_transaction(dg00x->unit, TCODE_WRITE_QUADLET_REQUEST,
+				 0xffffe000011c, &data, sizeof(data), 0);
+}
+
 static void finish_session(struct snd_dg00x *dg00x)
 {
 	__be32 data = cpu_to_be32(0x00000003);
@@ -160,6 +170,17 @@ static int begin_session(struct snd_dg00x *dg00x)
 		msleep(20);
 		curr--;
 	}
+
+	err = snd_fw_transaction(dg00x->unit,
+				 TCODE_READ_QUADLET_REQUEST,
+				 0xffffe0000000ull,
+				 &data, sizeof(data), 0);
+	if (err < 0)
+		goto error;
+
+	err = snd_dg00x_stream_get_clock(dg00x, &curr);
+	if (err < 0)
+		goto error;
 
 	return 0;
 error:

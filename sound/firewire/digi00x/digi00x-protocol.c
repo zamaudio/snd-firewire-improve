@@ -98,7 +98,7 @@ void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
 	struct snd_pcm_runtime *runtime = pcm->runtime;
 	unsigned int channels, remaining_frames, i, c;
 	const u32 *src;
-	static struct dot_state state;
+	static struct dot_state state = {0x00, 0x00, 0};
 
 	channels = s->pcm_channels;
 	src = (void *)runtime->dma_area +
@@ -106,7 +106,7 @@ void snd_dg00x_protocol_write_s32(struct amdtp_stream *s,
 	remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
 
 	for (i = 0; i < frames; ++i) {
-		dot_state_reset(&state);
+		//dot_state_reset(&state);
 
 		for (c = 0; c < channels; ++c) {
 			buffer[s->pcm_positions[c]] =
