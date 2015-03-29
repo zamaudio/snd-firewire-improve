@@ -337,7 +337,7 @@ void snd_dg00x_stream_stop_duplex(struct snd_dg00x *dg00x)
 	release_resources(dg00x);
 
 	/*
-	 * Just after finishing the seccion, the device may lost transmitting
+	 * Just after finishing the session, the device may lost transmitting
 	 * functionality for a short time.
 	 */
 	msleep(50);

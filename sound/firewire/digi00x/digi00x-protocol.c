@@ -246,10 +246,22 @@ void snd_dg00x_protocol_queue_midi_message(struct snd_dg00x *dg00x)
 static struct snd_dg00x *instances[SNDRV_CARDS];
 static DEFINE_SPINLOCK(instances_lock);
 
+/*
+ * Use the same range of address for asynchronous messages from any devices, to
+ * save resources on host controller.
+ */
+static struct fw_address_handler async_handler;
+
 static void handle_unknown_message(struct snd_dg00x *dg00x,
 				   unsigned long long offset, u32 *buf)
 {
-	snd_printk(KERN_INFO"%08llx: %08x\n", offset, be32_to_cpu(*buf));
+	unsigned long flags;
+
+	spin_lock_irqsave(&dg00x->lock, flags);
+	dg00x->msg = be32_to_cpu(*buf);
+	spin_unlock_irqrestore(&dg00x->lock, flags);
+
+	wake_up(&dg00x->hwdep_wait);
 }
 
 static void handle_midi_control(struct snd_dg00x *dg00x, u32 *buf,
@@ -296,20 +308,14 @@ static void handle_message(struct fw_card *card, struct fw_request *request,
 		break;
 	}
 
-	if (offset == 0xffffe0000000)
+	if (offset == async_handler.offset)
 		handle_unknown_message(dg00x, offset, buf);
-	else if (offset == 0xffffe0000004)
+	else if (offset == async_handler.offset + 4)
 		handle_midi_control(dg00x, buf, length);
 
 	spin_unlock_irq(&instances_lock);
 	fw_send_response(card, request, RCODE_COMPLETE);
 }
-
-/*
- * Use the same range of address for asynchronous messages from any devices, to
- * save resources on host controller.
- */
-static struct fw_address_handler async_handler;
 
 int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x)
 {
@@ -323,17 +329,17 @@ int snd_dg00x_protocol_add_instance(struct snd_dg00x *dg00x)
 			      (async_handler.offset >> 32));
 	data[1] = cpu_to_be32(async_handler.offset);
 	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
-				 DG00X_ADDR_BASE + DG00X_OFFSET_MIDI_CTL_ADDR,
+				 DG00X_ADDR_BASE + DG00X_OFFSET_MESSAGE_ADDR,
 				 &data, sizeof(data), 0);
 	if (err < 0)
 		return err;
 
-	/* Asynchronous transactions for MIDI control message. 8 bytes. */
+	/* Asynchronous transactions for MIDI control message. */
 	data[0] = cpu_to_be32((device->card->node_id << 16) |
 			      (async_handler.offset >> 32));
 	data[1] = cpu_to_be32(async_handler.offset + 4);
 	err = snd_fw_transaction(dg00x->unit, TCODE_WRITE_BLOCK_REQUEST,
-				 DG00X_ADDR_BASE + DG00X_OFFSET_NOTIFY_ADDR,
+				 DG00X_ADDR_BASE + DG00X_OFFSET_MIDI_CTL_ADDR,
 				 &data, sizeof(data), 0);
 	if (err < 0)
 		return err;

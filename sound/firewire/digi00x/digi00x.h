@@ -68,6 +68,9 @@ struct snd_dg00x {
 	bool dev_lock_changed;
 	wait_queue_head_t hwdep_wait;
 
+	/* For asynchronous messages. */
+	u32 msg;
+
 	/* For asynchronous MIDI controls. */
 	struct work_struct midi_control;
 	struct snd_rawmidi_substream *in_control;
@@ -78,10 +81,10 @@ struct snd_dg00x {
 
 #define DG00X_OFFSET_STREAMING_STATE	0x0000
 #define DG00X_OFFSET_STREAMING_SET	0x0004
-#define DG00X_OFFSET_NOTIFY_ADDR	0x0008
+#define DG00X_OFFSET_MIDI_CTL_ADDR	0x0008
 /* For LSB of the address		0x000c */
 /* unknown				0x0010 */
-#define DG00X_OFFSET_MIDI_CTL_ADDR	0x0014
+#define DG00X_OFFSET_MESSAGE_ADDR	0x0014
 /* For LSB of the address		0x0018 */
 /* unknown				0x001c */
 /* unknown				0x0020 */
