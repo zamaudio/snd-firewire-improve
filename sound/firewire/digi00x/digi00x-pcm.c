@@ -65,7 +65,6 @@ static int pcm_init_hw_params(struct snd_dg00x *dg00x,
 			SNDRV_PCM_INFO_JOINT_DUPLEX |
 			SNDRV_PCM_INFO_MMAP |
 			SNDRV_PCM_INFO_MMAP_VALID,
-		.formats = SNDRV_PCM_FMTBIT_S32,
 		.rates = SNDRV_PCM_RATE_44100 |
 			 SNDRV_PCM_RATE_48000 |
 			 SNDRV_PCM_RATE_88200 |
