@@ -38,7 +38,7 @@ static void proc_read_clock(struct snd_info_entry *entry,
 	};
 	struct snd_dg00x *dg00x = entry->private_data;
 	unsigned int rate;
-	enum snd_dg00x_clock clock;
+	unsigned int clock;
 	enum snd_dg00x_optical_mode mode;
 
 	if (snd_dg00x_stream_get_rate(dg00x, &rate) < 0)
